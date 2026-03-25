@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Checkout ucp-client (sibling directory)
+        uses: actions/checkout@v4
+        with:
+          repository: GetMomentumToday/ucp-client
+          path: ../ucp-client
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Build ucp-client
+        run: |
+          cd ../ucp-client
+          npm ci
+          npm run build
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: No descriptive comments
+        run: npm run check:comments
+
+      - name: Build
+        run: npm run build
