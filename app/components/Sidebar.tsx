@@ -8,6 +8,10 @@ interface SidebarProps {
   readonly gatewayConnected: boolean;
 }
 
+function handleNewConversation() {
+  window.location.reload();
+}
+
 export function Sidebar({ sessionId, checkoutId, gatewayConnected }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
@@ -15,7 +19,9 @@ export function Sidebar({ sessionId, checkoutId, gatewayConnected }: SidebarProp
 
       <div className={styles.label}>Conversations</div>
       <div className={`${styles.item} ${styles.active}`}>Shopping chat</div>
-      <div className={styles.item}>New conversation</div>
+      <button type="button" className={styles.newBtn} onClick={handleNewConversation}>
+        + New conversation
+      </button>
 
       <div className={styles.spacer} />
 

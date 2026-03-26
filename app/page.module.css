@@ -344,7 +344,7 @@
   border-top: 1px solid var(--color-border-primary);
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-end;
   background: var(--color-bg-primary);
 }
 
@@ -352,12 +352,17 @@
   flex: 1;
   padding: 10px 16px;
   border: 1px solid var(--color-border-secondary);
-  border-radius: var(--radius-full);
+  border-radius: 20px;
   font-size: 13.5px;
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  field-sizing: content;
+  font-family: inherit;
 }
 
 .chatInput:focus {

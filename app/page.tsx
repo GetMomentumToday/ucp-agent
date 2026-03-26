@@ -228,7 +228,10 @@ function MyAssistantMessage() {
       <div className={`${styles.msg} ${styles.agentMsg}`}>
         <MessagePrimitive.Content
           components={{
-            Text: ({ text }) => <p className={styles.agentText}>{text}</p>,
+            Text: ({ text }) => {
+              if (!text.trim()) return null;
+              return <p className={styles.agentText}>{text}</p>;
+            },
             tools: { Fallback: ToolCallFallback },
           }}
         />
@@ -249,7 +252,12 @@ function MyAssistantMessage() {
 function MyComposer() {
   return (
     <ComposerPrimitive.Root className={styles.inputRow}>
-      <ComposerPrimitive.Input placeholder="Type a message..." className={styles.chatInput} />
+      <ComposerPrimitive.Input
+        placeholder="Type a message..."
+        className={styles.chatInput}
+        autoFocus
+        rows={1}
+      />
       <ComposerPrimitive.Send className={styles.sendBtn}>
         <svg viewBox="0 0 16 16" width={14} height={14}>
           <path d="M2 8L14 2L9 14L7.5 9.5Z" fill="currentColor" />
