@@ -110,7 +110,7 @@ export function createUcpTools(sessionId: string) {
 
     ucp_create_checkout: tool({
       description:
-        'Create a new checkout session (cart) with line items. Returns the checkout session with totals.',
+        'Create a new checkout session (cart) with line items. Returns the checkout session with totals. Only call once per order — if a checkout already exists, use ucp_update_checkout instead.',
       inputSchema: z.object({
         line_items: z
           .array(
@@ -134,6 +134,14 @@ export function createUcpTools(sessionId: string) {
       }),
       execute: async (payload) => {
         try {
+          const existing = getCheckoutSessionId(sessionId);
+          if (existing) {
+            const current = await client.getCheckout(existing);
+            return {
+              ...current,
+              _note: 'Checkout already exists. Use ucp_update_checkout to modify it.',
+            };
+          }
           const session = await client.createCheckout(payload);
           setCheckoutSessionId(sessionId, session.id);
           return session;
