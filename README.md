@@ -116,4 +116,6 @@ npm run check:comments # No descriptive comments
 
 ## License
 
-Proprietary — GetMomentumToday
+[Elastic License 2.0 (ELv2)](LICENSE.md) — free to use, modify, and self-host. Cannot be offered as a hosted service.
+
+For commercial licensing, contact [Momentum Group s. r. o.](https://getmomentum.today) (momentum.group139@gmail.com)
