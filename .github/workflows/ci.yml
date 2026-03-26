@@ -11,47 +11,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: ucp-agent
-
-      - uses: actions/checkout@v4
-        with:
-          repository: GetMomentumToday/ucp-client
-          path: ucp-client
-          token: ${{ secrets.GH_PAT }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: ucp-agent/package-lock.json
-
-      - name: Build ucp-client
-        run: |
-          cd ucp-client
-          npm ci
-          npm run build
+          registry-url: https://npm.pkg.github.com
 
       - name: Install dependencies
-        working-directory: ucp-agent
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Type check
-        working-directory: ucp-agent
         run: npm run typecheck
 
       - name: Lint
-        working-directory: ucp-agent
         run: npm run lint
 
       - name: Format check
-        working-directory: ucp-agent
         run: npm run format:check
 
       - name: No descriptive comments
-        working-directory: ucp-agent
         run: npm run check:comments
 
       - name: Build
-        working-directory: ucp-agent
         run: npm run build

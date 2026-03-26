@@ -134,7 +134,8 @@ function MessageBubble({ message }: { readonly message: UIMessage }) {
     }
   }
 
-  const hasContent = textParts.length > 0 || toolParts.some((t) => t.output !== null && t.output !== undefined);
+  const hasContent =
+    textParts.length > 0 || toolParts.some((t) => t.output !== null && t.output !== undefined);
   const completedTools = toolParts.filter((t) => t.output !== null && t.output !== undefined);
 
   return (

@@ -12,13 +12,13 @@
     "format": "prettier --write '**/*.{ts,tsx,json,md}'",
     "format:check": "prettier --check '**/*.{ts,tsx,json,md}'",
     "typecheck": "tsc --noEmit",
-    "check:comments": "bash scripts/no-descriptive-comments.sh"
+    "check:comments": "bash scripts/no-descriptive-comments.sh",
+    "postinstall": "patch-package"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.64",
     "@ai-sdk/google": "^3.0.53",
     "@ai-sdk/react": "^3.0.140",
-    "@momentum/ucp-client": "file:../ucp-client/packages/ucp-client",
+    "@getmomentumtoday/ucp-client": "^0.1.0",
     "ai": "^6.0.138",
     "next": "^15.0.0",
     "react": "^19.0.0",
@@ -31,6 +31,7 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.0.0",
+    "patch-package": "^8.0.1",
     "prettier": "^3.2.0",
     "typescript": "^5.4.0"
   },

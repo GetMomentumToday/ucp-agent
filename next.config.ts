@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@momentum/ucp-client'],
+  serverExternalPackages: ['@getmomentumtoday/ucp-client'],
 };
 
 export default nextConfig;

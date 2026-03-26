@@ -6,7 +6,7 @@ Next.js App Router project. AI shopping assistant using Vercel AI SDK + Gemini +
 
 - `POST /api/chat` — main endpoint, streams Gemini responses with tool calls via SSE
 - `GET /agent-profile.json` — agent identity for UCP protocol
-- 8 tools wrap `@momentum/ucp-client` methods (discover, search, checkout flow, orders)
+- 8 tools wrap `@getmomentumtoday/ucp-client` methods (discover, search, checkout flow, orders)
 - In-memory session store maps chat sessionId → checkoutSessionId
 - `agent.config.json` — static config for agent name, personality, instructions, greeting
 
@@ -15,7 +15,7 @@ Next.js App Router project. AI shopping assistant using Vercel AI SDK + Gemini +
 - Next.js 15, App Router
 - Vercel AI SDK v6 (`ai` + `@ai-sdk/google` + `@ai-sdk/react`)
 - `gemini-2.5-flash` model, `stopWhen: stepCountIs(15)`
-- `@momentum/ucp-client` linked from `../ucp-client/packages/ucp-client`
+- `@getmomentumtoday/ucp-client` linked from `../ucp-client/packages/ucp-client`
 
 ## Commands
 

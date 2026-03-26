@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { UCPClient, UCPError, UCPEscalationError } from '@momentum/ucp-client';
+import { UCPClient, UCPError, UCPEscalationError } from '@getmomentumtoday/ucp-client';
 import {
   getCheckoutSessionId,
   setCheckoutSessionId,

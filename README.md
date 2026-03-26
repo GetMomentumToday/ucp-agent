@@ -2,7 +2,7 @@
 
 AI shopping assistant that connects Claude to any e-commerce store via the [Universal Commerce Protocol](https://github.com/anthropics/ucp).
 
-Built with Next.js App Router, Vercel AI SDK, and `@momentum/ucp-client`.
+Built with Next.js App Router, Vercel AI SDK, and `@getmomentumtoday/ucp-client`.
 
 ## What It Does
 
