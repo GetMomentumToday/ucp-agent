@@ -6,6 +6,7 @@ interface AgentConfig {
   readonly personality: string;
   readonly instructions: string;
   readonly greeting: string;
+  readonly rules: readonly string[];
 }
 
 const DEFAULT_CONFIG: AgentConfig = {
@@ -14,6 +15,7 @@ const DEFAULT_CONFIG: AgentConfig = {
     'warm, enthusiastic, and knowledgeable — like the best salesperson you have ever met',
   instructions: '',
   greeting: "Hi there! I'm your personal shopping assistant. What can I help you find today?",
+  rules: [],
 };
 
 let cachedConfig: AgentConfig | null = null;
