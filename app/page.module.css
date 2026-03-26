@@ -27,6 +27,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
 }
 
 .chatHeader {
@@ -40,12 +41,19 @@
 .chatHeaderLeft {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .chatHeaderTitle {
   font-size: 14px;
   font-weight: 500;
+  display: block;
+}
+
+.chatHeaderSub {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  display: block;
 }
 
 .themeToggle {
@@ -67,13 +75,74 @@
   gap: 12px;
 }
 
-.msg {
-  max-width: 80%;
+/* ── Avatars ─────────────────────────────────────── */
+
+.agentAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-text-info);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.agentAvatarSmall {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-text-info);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.userAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Message rows ────────────────────────────────── */
+
+.userRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  justify-content: flex-end;
   animation: msgSlideIn 0.3s ease-out;
 }
 
+.agentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  animation: msgSlideIn 0.3s ease-out;
+}
+
+.msg {
+  max-width: 80%;
+}
+
 .userMsg {
-  align-self: flex-end;
   padding: 10px 14px;
   border-radius: 12px;
   border-bottom-right-radius: 3px;
@@ -84,7 +153,7 @@
 }
 
 .agentMsg {
-  align-self: flex-start;
+  min-width: 0;
 }
 
 .agentText {
@@ -97,6 +166,153 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* ── ActionBar ───────────────────────────────────── */
+
+.actionBar {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.agentRow:hover .actionBar {
+  opacity: 1;
+}
+
+.actionBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-bg-primary);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.actionBtn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+}
+
+/* ── Error ───────────────────────────────────────── */
+
+.errorMsg {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 0.5px solid #fecaca;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+[data-theme='dark'] .errorMsg {
+  background: #2a0a0a;
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+
+/* ── Typing indicator ────────────────────────────── */
+
+.typingRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  animation: msgSlideIn 0.3s ease-out;
+}
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--color-bg-secondary);
+  border: 0.5px solid var(--color-border-primary);
+  border-radius: 12px;
+  border-bottom-left-radius: 3px;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ── Tool fallback ───────────────────────────────── */
+
+.toolFallback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  padding: 4px 0;
+}
+
+.toolDotDone {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-success);
+}
+
+.toolDotRunning {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-tertiary);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* ── ScrollToBottom ──────────────────────────────── */
+
+.scrollToBottom {
+  position: absolute;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg-primary);
+  border: 0.5px solid var(--color-border-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.scrollToBottom:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scrollToBottom:hover:not(:disabled) {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+
+/* ── Composer ────────────────────────────────────── */
 
 .inputRow {
   padding: 12px 16px;
@@ -143,6 +359,8 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* ── Welcome screen ──────────────────────────────── */
 
 .welcome {
   display: flex;
@@ -196,6 +414,8 @@
   color: var(--color-text-info);
 }
 
+/* ── Animations ──────────────────────────────────── */
+
 @keyframes msgSlideIn {
   from {
     opacity: 0;
@@ -204,5 +424,26 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
   }
 }
