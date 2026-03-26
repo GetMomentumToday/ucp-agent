@@ -1,7 +1,7 @@
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'ai';
-import { google } from '@ai-sdk/google';
 import { buildSystemPrompt } from '@/lib/system-prompt';
 import { createUcpTools } from '@/lib/ucp-tools';
+import { getModel } from '@/lib/model';
 
 export const maxDuration = 60;
 
@@ -19,7 +19,7 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const modelMessages = await convertToModelMessages(messages);
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: getModel(),
       system: buildSystemPrompt(),
       messages: modelMessages,
       tools: createUcpTools(sessionId),
