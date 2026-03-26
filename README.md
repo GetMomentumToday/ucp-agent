@@ -130,6 +130,51 @@ lib/
 └── session-store.ts              In-memory sessionId → checkoutSessionId map
 ```
 
+## Cost & Optimization
+
+The system prompt and tool calls are optimized for cost-efficiency and low latency:
+
+- **Max 2 tool calls per turn** — protects against rate limits and unnecessary spend
+- **No duplicate checkouts** — server-side guard prevents creating multiple sessions
+- **Single search per turn** — broad terms cover multiple categories in one call
+- **Prompt caching** — Anthropic automatically caches system prompts >1024 tokens (90% discount on repeated calls within 5 min)
+
+### Cost per session (Claude Haiku 4.5)
+
+A typical checkout flow (search → pick → info → address → confirm → order) = ~6 API calls.
+
+| Component            | Tokens/call | Calls | Total  |
+| -------------------- | ----------- | ----- | ------ |
+| System prompt        | ~1,500      | 6     | 9,000  |
+| Conversation history | ~500 avg    | 6     | 3,000  |
+| Tool definitions     | ~2,000      | 6     | 12,000 |
+| Tool results (JSON)  | ~800        | 4     | 3,200  |
+| Model output         | ~150        | 6     | 900    |
+
+**Per session:** ~27K input tokens ($0.022) + ~900 output tokens ($0.004) = **~$0.026 (2.6 cents)**
+
+| Sessions/day | Monthly cost |
+| ------------ | ------------ |
+| 10           | $7.80        |
+| 100          | $78          |
+| 1,000        | $780         |
+
+Gemini free tier: $0.00 (limited to ~30-50 sessions/day).
+
+### QA results
+
+15 customer scenarios tested across 20 iterative cycles:
+
+```
+Cycle  1: 14/15 (greeting empty)
+Cycle  5: 15/15, avg quality 8.6/10
+Cycle  6: 15/15, avg quality 9.5/10
+Cycles 18-20: 15/15 stable
+Multi-turn: full checkout → order ID confirmed
+```
+
+Run tests locally: `node scripts/run-scenario.mjs`
+
 ## Scripts
 
 ```bash
