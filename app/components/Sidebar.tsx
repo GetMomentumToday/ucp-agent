@@ -16,8 +16,11 @@ export function Sidebar() {
 
       <div className={styles.label}>Conversations</div>
       <div className={`${styles.item} ${styles.active}`}>
-        <span className={styles.itemIcon}>💬</span>
-        Shopping chat
+        <span className={styles.itemIcon}>🛍️</span>
+        <div>
+          <div className={styles.itemTitle}>Shopping chat</div>
+          <div className={styles.itemMeta}>Just now</div>
+        </div>
       </div>
       <button type="button" className={styles.newBtn} onClick={handleNewConversation}>
         <span className={styles.newBtnIcon}>+</span>

@@ -191,7 +191,31 @@
   color: var(--color-text-primary);
   border: 1px solid var(--color-border-primary);
   font-size: 13.5px;
-  line-height: 1.55;
+  line-height: 1.6;
+}
+
+.agentText ul {
+  margin: 6px 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.agentText li {
+  padding: 3px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.agentText li::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: var(--color-text-tertiary);
+}
+
+.agentText strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 /* ── ActionBar ───────────────────────────────────── */

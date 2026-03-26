@@ -238,15 +238,14 @@ function MyAssistantMessage() {
           components={{
             Text: ({ text }) => {
               if (!text.trim()) return null;
+              const html = text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+                .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+                .replace(/\n/g, '<br />');
               return (
-                <p
-                  className={styles.agentText}
-                  dangerouslySetInnerHTML={{
-                    __html: text
-                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n/g, '<br />'),
-                  }}
-                />
+                <div className={styles.agentText} dangerouslySetInnerHTML={{ __html: html }} />
               );
             },
             tools: { Fallback: ToolCallFallback },
@@ -270,7 +269,7 @@ function MyComposer() {
   return (
     <ComposerPrimitive.Root className={styles.inputRow}>
       <ComposerPrimitive.Input
-        placeholder="Type a message..."
+        placeholder="Ask about a product or start shopping..."
         className={styles.chatInput}
         autoFocus
         rows={1}

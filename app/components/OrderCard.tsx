@@ -14,6 +14,16 @@ function formatPrice(cents: number, currency: string): string {
   }).format(cents / 100);
 }
 
+function getEstimatedDelivery(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 5);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 const TIMELINE_STEPS = ['Ordered', 'Processing', 'Shipped', 'Delivered'] as const;
 
 function getActiveIndex(status: string): number {
@@ -29,13 +39,16 @@ function getActiveIndex(status: string): number {
 
 export function OrderCard({ orderId, totalCents, currency, status }: OrderCardProps) {
   const activeIdx = getActiveIndex(status);
+  const delivery = getEstimatedDelivery();
 
   return (
     <div className={styles.card}>
+      <div className={styles.celebration}>🎉</div>
+
       <div className={styles.header}>
-        <span className={styles.check}>{'\u2713'}</span>
+        <span className={styles.check}>✓</span>
         <div>
-          <div className={styles.title}>Order Confirmed</div>
+          <div className={styles.title}>Order Confirmed!</div>
           <div className={styles.orderId}>#{orderId}</div>
         </div>
       </div>
@@ -59,9 +72,14 @@ export function OrderCard({ orderId, totalCents, currency, status }: OrderCardPr
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.total}>
-          Total: <strong>{formatPrice(totalCents, currency)}</strong>
-        </span>
+        <div className={styles.footerRow}>
+          <span className={styles.footerLabel}>Total charged</span>
+          <span className={styles.footerValue}>{formatPrice(totalCents, currency)}</span>
+        </div>
+        <div className={styles.footerRow}>
+          <span className={styles.footerLabel}>Est. delivery</span>
+          <span className={styles.footerValue}>{delivery}</span>
+        </div>
       </div>
     </div>
   );
