@@ -9,17 +9,25 @@ function handleNewConversation() {
 export function Sidebar() {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.title}>Scout</div>
+      <div className={styles.brand}>
+        <span className={styles.brandDot} />
+        <span className={styles.brandName}>Scout</span>
+      </div>
 
       <div className={styles.label}>Conversations</div>
-      <div className={`${styles.item} ${styles.active}`}>Shopping chat</div>
+      <div className={`${styles.item} ${styles.active}`}>
+        <span className={styles.itemIcon}>💬</span>
+        Shopping chat
+      </div>
       <button type="button" className={styles.newBtn} onClick={handleNewConversation}>
-        + New conversation
+        <span className={styles.newBtnIcon}>+</span>
+        New conversation
       </button>
 
       <div className={styles.spacer} />
 
       <div className={styles.powered}>
+        <span className={styles.poweredBadge}>UCP</span>
         Powered by <strong>Momentum</strong>
       </div>
     </aside>

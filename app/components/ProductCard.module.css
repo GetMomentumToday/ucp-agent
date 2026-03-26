@@ -14,14 +14,14 @@
 }
 
 .card {
-  width: 170px;
-  min-width: 170px;
-  border: 0.5px solid var(--color-border-primary);
+  width: 180px;
+  min-width: 180px;
+  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-lg);
   background: var(--color-bg-primary);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   animation: cardSlideIn 0.4s ease-out;
 }
 
@@ -81,28 +81,37 @@
 }
 
 .body {
-  padding: 8px 10px 10px;
+  padding: 10px 12px 12px;
 }
 
 .name {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 2px;
-  line-height: 1.3;
+  margin-bottom: 3px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .snippet {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  margin-bottom: 4px;
-  line-height: 1.3;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .price {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--color-text-success);
+  letter-spacing: -0.01em;
 }
 
 @keyframes cardSlideIn {

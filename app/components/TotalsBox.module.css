@@ -1,57 +1,75 @@
 .box {
-  border: 0.5px solid var(--color-border-primary);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  margin-top: 6px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-top: 8px;
   background: var(--color-bg-primary);
+  animation: slideUp 0.3s ease-out;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
-  padding: 2px 0;
+  padding: 4px 0;
 }
 
 .total {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 14px;
   color: var(--color-text-primary);
-  border-top: 0.5px solid var(--color-border-primary);
-  padding-top: 6px;
-  margin-top: 4px;
+  border-top: 1px solid var(--color-border-primary);
+  padding-top: 8px;
+  margin-top: 6px;
 }
 
 .actions {
   display: flex;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .btnConfirm {
-  padding: 6px 14px;
-  background: var(--color-text-primary);
-  color: var(--color-bg-primary);
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  color: #fff;
   border: none;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btnConfirm:hover {
-  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
 }
 
 .btnCancel {
-  padding: 6px 14px;
+  padding: 8px 20px;
   background: transparent;
   color: var(--color-text-secondary);
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-md);
+  font-size: 13px;
   cursor: pointer;
+  transition: all 0.15s;
 }
 
 .btnCancel:hover {
   border-color: var(--color-text-secondary);
+  color: var(--color-text-primary);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
