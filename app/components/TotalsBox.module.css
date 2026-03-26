@@ -21,3 +21,37 @@
   padding-top: 6px;
   margin-top: 4px;
 }
+
+.actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btnConfirm {
+  padding: 6px 14px;
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btnConfirm:hover {
+  opacity: 0.85;
+}
+
+.btnCancel {
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btnCancel:hover {
+  border-color: var(--color-text-secondary);
+}

@@ -8,9 +8,11 @@ interface TotalsLine {
 interface TotalsBoxProps {
   readonly lines: readonly TotalsLine[];
   readonly total: TotalsLine;
+  readonly onConfirm?: () => void;
+  readonly onCancel?: () => void;
 }
 
-export function TotalsBox({ lines, total }: TotalsBoxProps) {
+export function TotalsBox({ lines, total, onConfirm, onCancel }: TotalsBoxProps) {
   return (
     <div className={styles.box}>
       {lines.map((line) => (
@@ -23,6 +25,20 @@ export function TotalsBox({ lines, total }: TotalsBoxProps) {
         <span>{total.label}</span>
         <span>{total.amount}</span>
       </div>
+      {(onConfirm || onCancel) && (
+        <div className={styles.actions}>
+          {onConfirm && (
+            <button type="button" className={styles.btnConfirm} onClick={onConfirm}>
+              Yes, place order
+            </button>
+          )}
+          {onCancel && (
+            <button type="button" className={styles.btnCancel} onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

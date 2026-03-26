@@ -45,7 +45,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
       <div className={styles.name}>{product.title}</div>
       <div className={styles.price}>{formatPrice(product.price_cents, product.currency)}</div>
-      <div className={styles.stock}>
+      <div className={product.in_stock ? styles.stockIn : styles.stockOut}>
         {product.in_stock ? '\u2713 In stock' : '\u2717 Out of stock'}
       </div>
     </div>
