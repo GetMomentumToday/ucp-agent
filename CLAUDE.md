@@ -1,19 +1,20 @@
 # UCP Agent — AI Brain
 
-Next.js App Router project. AI shopping assistant using Vercel AI SDK + Claude + UCP.
+Next.js App Router project. AI shopping assistant using Vercel AI SDK + Gemini + UCP.
 
 ## Architecture
 
-- `POST /api/chat` — main endpoint, streams Claude responses with tool calls via SSE
+- `POST /api/chat` — main endpoint, streams Gemini responses with tool calls via SSE
 - `GET /agent-profile.json` — agent identity for UCP protocol
 - 8 tools wrap `@momentum/ucp-client` methods (discover, search, checkout flow, orders)
 - In-memory session store maps chat sessionId → checkoutSessionId
+- `agent.config.json` — static config for agent name, personality, instructions, greeting
 
 ## Stack
 
 - Next.js 15, App Router
-- Vercel AI SDK v4 (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/react`)
-- `claude-sonnet-4-6` model, `maxSteps: 15`
+- Vercel AI SDK v6 (`ai` + `@ai-sdk/google` + `@ai-sdk/react`)
+- `gemini-2.5-flash` model, `stopWhen: stepCountIs(15)`
 - `@momentum/ucp-client` linked from `../ucp-client/packages/ucp-client`
 
 ## Commands
@@ -29,7 +30,8 @@ npm run format       # Prettier
 ## Env Vars
 
 Copy `.env.example` to `.env.local` and fill in:
-- `ANTHROPIC_API_KEY` — Claude API key
+
+- `GOOGLE_GENERATIVE_AI_API_KEY` — Gemini API key
 - `GATEWAY_URL` — UCP gateway (default: http://localhost:3000)
 - `UCP_AGENT_PROFILE` — This agent's profile URL (default: http://localhost:3001/agent-profile.json)
 

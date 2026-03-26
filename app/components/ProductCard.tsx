@@ -6,6 +6,7 @@ interface Product {
   readonly price_cents: number;
   readonly currency: string;
   readonly in_stock: boolean;
+  readonly images?: readonly string[];
 }
 
 interface ProductCardProps {
@@ -20,8 +21,28 @@ function formatPrice(cents: number, currency: string): string {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const imageUrl = product.images?.[0];
+
   return (
     <div className={styles.card}>
+      <div className={styles.imageWrap}>
+        {imageUrl ? (
+          <img src={imageUrl} alt={product.title} className={styles.image} />
+        ) : (
+          <div className={styles.placeholder}>
+            <svg
+              viewBox="0 0 24 24"
+              width={24}
+              height={24}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+        )}
+      </div>
       <div className={styles.name}>{product.title}</div>
       <div className={styles.price}>{formatPrice(product.price_cents, product.currency)}</div>
       <div className={styles.stock}>

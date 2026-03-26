@@ -19,6 +19,29 @@
   border-color: var(--color-border-secondary);
 }
 
+.imageWrap {
+  width: 100%;
+  height: 80px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 0.5;
+}
+
 .name {
   font-size: 12px;
   font-weight: 500;

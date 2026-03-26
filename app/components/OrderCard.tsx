@@ -17,7 +17,9 @@ function formatPrice(cents: number, currency: string): string {
 export function OrderCard({ orderId, totalCents, currency, status }: OrderCardProps) {
   return (
     <div className={styles.card}>
-      <div className={styles.title}>{'\u2713'} Order #{orderId}</div>
+      <div className={styles.title}>
+        {'\u2713'} Order #{orderId}
+      </div>
       <div className={styles.detail}>
         Total: {formatPrice(totalCents, currency)} &middot; Status: {status}
       </div>

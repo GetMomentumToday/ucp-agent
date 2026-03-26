@@ -67,11 +67,11 @@ Open [http://localhost:3001](http://localhost:3001) and start chatting.
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Claude API key | — |
-| `GATEWAY_URL` | UCP Gateway URL | `http://localhost:3000` |
-| `UCP_AGENT_PROFILE` | This agent's profile URL | `http://localhost:3001/agent-profile.json` |
+| Variable                       | Description              | Default                                    |
+| ------------------------------ | ------------------------ | ------------------------------------------ |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini API key           | —                                          |
+| `GATEWAY_URL`                  | UCP Gateway URL          | `http://localhost:3000`                    |
+| `UCP_AGENT_PROFILE`            | This agent's profile URL | `http://localhost:3001/agent-profile.json` |
 
 ## API
 

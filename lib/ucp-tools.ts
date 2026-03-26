@@ -31,6 +31,21 @@ function formatError(error: unknown): string {
   return String(error);
 }
 
+function normalizSearchQuery(query: string): string {
+  return query
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      const lower = word.toLowerCase();
+      if (lower.endsWith('ies')) return lower.slice(0, -3) + 'y';
+      if (lower.endsWith('ses') || lower.endsWith('xes') || lower.endsWith('zes'))
+        return lower.slice(0, -2);
+      if (lower.endsWith('s') && !lower.endsWith('ss')) return lower.slice(0, -1);
+      return lower;
+    })
+    .join(' ');
+}
+
 export function createUcpTools(sessionId: string) {
   const client = createClient();
 
@@ -49,18 +64,30 @@ export function createUcpTools(sessionId: string) {
     }),
 
     ucp_search_products: tool({
-      description: 'Search for products by keyword. Returns matching products with prices and stock.',
+      description:
+        'Search for products by keyword. Use singular forms (e.g., "bag" not "bags"). Returns matching products with prices, stock, images, and descriptions.',
       inputSchema: z.object({
-        query: z.string().describe('Search keyword (e.g., "shoes", "sneakers")'),
+        query: z
+          .string()
+          .describe('Search keyword in SINGULAR form (e.g., "bag", "shoe", "jacket")'),
         max_price_cents: z.number().int().optional().describe('Maximum price in cents'),
         min_price_cents: z.number().int().optional().describe('Minimum price in cents'),
         in_stock: z.boolean().optional().describe('Filter to only in-stock items'),
         category: z.string().optional().describe('Product category filter'),
-        limit: z.number().int().optional().describe('Max results to return'),
+        limit: z
+          .number()
+          .int()
+          .optional()
+          .describe('Max results to return (default 20, recommend 5)'),
       }),
       execute: async ({ query, ...filters }) => {
         try {
-          return await client.searchProducts(query, filters);
+          const normalizedQuery = normalizSearchQuery(query);
+          const results = await client.searchProducts(normalizedQuery, filters);
+          if (results.length === 0 && normalizedQuery !== query) {
+            return await client.searchProducts(query, filters);
+          }
+          return results;
         } catch (error) {
           return { error: formatError(error) };
         }
@@ -180,7 +207,9 @@ export function createUcpTools(sessionId: string) {
         try {
           const id = checkout_id ?? getCheckoutSessionId(sessionId);
           if (!id) {
-            return { error: 'No active checkout session. Create one first with ucp_create_checkout.' };
+            return {
+              error: 'No active checkout session. Create one first with ucp_create_checkout.',
+            };
           }
           const session = await client.updateCheckout(id, patch);
           return session;
@@ -215,7 +244,9 @@ export function createUcpTools(sessionId: string) {
         try {
           const id = checkout_id ?? getCheckoutSessionId(sessionId);
           if (!id) {
-            return { error: 'No active checkout session. Create one first with ucp_create_checkout.' };
+            return {
+              error: 'No active checkout session. Create one first with ucp_create_checkout.',
+            };
           }
           const session = await client.completeCheckout(id, { payment });
           clearCheckoutSessionId(sessionId);

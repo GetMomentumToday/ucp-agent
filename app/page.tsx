@@ -58,7 +58,9 @@ export default function ChatPage() {
   );
 }
 
-function extractCheckoutId(messages: readonly { parts: readonly { type: string }[] }[]): string | null {
+function extractCheckoutId(
+  messages: readonly { parts: readonly { type: string }[] }[],
+): string | null {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
     if (!msg) continue;

@@ -57,9 +57,7 @@ export function ChatArea({
           </div>
         )}
 
-        {error && (
-          <div className={styles.error}>Error: {error.message}</div>
-        )}
+        {error && <div className={styles.error}>Error: {error.message}</div>}
 
         <div ref={messagesEndRef} />
       </div>
@@ -88,37 +86,75 @@ export function ChatArea({
   );
 }
 
+interface ToolPart {
+  readonly toolName: string;
+  readonly state: string;
+  readonly output?: unknown;
+}
+
+function extractToolPart(part: { type: string }): ToolPart | null {
+  if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
+    const p = part as unknown as { toolName?: string; state: string; output?: unknown };
+    return {
+      toolName: p.toolName ?? part.type.replace('tool-', ''),
+      state: p.state,
+      output: p.output,
+    };
+  }
+  return null;
+}
+
 function MessageBubble({ message }: { readonly message: UIMessage }) {
   const isUser = message.role === 'user';
 
+  if (isUser) {
+    const text = message.parts
+      .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map((p) => p.text)
+      .join('');
+
+    return (
+      <div className={`${styles.msg} ${styles.user}`}>
+        <div className={styles.bubble}>
+          <div className={styles.bubbleText}>{text}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const toolParts: ToolPart[] = [];
+  const textParts: string[] = [];
+
+  for (const part of message.parts) {
+    const tp = extractToolPart(part);
+    if (tp) {
+      toolParts.push(tp);
+    } else if (part.type === 'text' && (part as { text: string }).text.trim()) {
+      textParts.push((part as { text: string }).text);
+    }
+  }
+
+  const hasContent = textParts.length > 0 || toolParts.some((t) => t.output !== null && t.output !== undefined);
+  const completedTools = toolParts.filter((t) => t.output !== null && t.output !== undefined);
+
   return (
-    <div className={`${styles.msg} ${isUser ? styles.user : styles.agent}`}>
-      {message.parts.map((part, i) => {
-        const key = `${message.id}-${i}`;
+    <div className={`${styles.msg} ${styles.agent}`}>
+      {toolParts.map((tp, i) => (
+        <ToolIndicator key={`tool-${i}`} toolName={tp.toolName} state={tp.state} />
+      ))}
 
-        if (part.type === 'text' && part.text.trim()) {
-          return (
-            <div key={key} className={styles.bubble}>
-              <div className={styles.bubbleText}>{part.text}</div>
+      {hasContent && (
+        <div className={styles.bubble}>
+          {textParts.map((text, i) => (
+            <div key={`text-${i}`} className={styles.bubbleText}>
+              {text}
             </div>
-          );
-        }
-
-        if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
-          const toolPart = part as { toolName?: string; state: string; output?: unknown };
-          const toolName = toolPart.toolName ?? part.type.replace('tool-', '');
-          return (
-            <div key={key}>
-              <ToolIndicator toolName={toolName} state={toolPart.state} />
-              {toolPart.state === 'result' && toolPart.output != null && (
-                <ToolResultRenderer toolName={toolName} result={toolPart.output} />
-              )}
-            </div>
-          );
-        }
-
-        return null;
-      })}
+          ))}
+          {completedTools.map((tp, i) => (
+            <ToolResultRenderer key={`result-${i}`} toolName={tp.toolName} result={tp.output} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
