@@ -5,7 +5,7 @@ import {
   getCheckoutSessionId,
   setCheckoutSessionId,
   clearCheckoutSessionId,
-} from './session-store.js';
+} from './session-store';
 
 function createClient(): UCPClient {
   const gatewayUrl = process.env['GATEWAY_URL'];

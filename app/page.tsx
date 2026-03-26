@@ -1,20 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import styles from './page.module.css';
 
-const SESSION_ID = `sess_${Math.random().toString(36).slice(2, 8)}`;
-
-const transport = new DefaultChatTransport({
-  api: '/api/chat',
-  body: { sessionId: SESSION_ID },
-});
+function useStableId(): string {
+  return useMemo(() => `sess_${Math.random().toString(36).slice(2, 8)}`, []);
+}
 
 export default function ChatPage() {
+  const sessionId = useStableId();
+
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: '/api/chat', body: { sessionId } }),
+    [sessionId],
+  );
+
   const { messages, status, error, sendMessage } = useChat({ transport });
 
   const [input, setInput] = useState('');
@@ -36,7 +40,7 @@ export default function ChatPage() {
       <div className={styles.header}>localhost:3001 — demo page</div>
       <div className={styles.wrap}>
         <Sidebar
-          sessionId={SESSION_ID}
+          sessionId={sessionId}
           checkoutId={checkoutId}
           gatewayConnected={gatewayConnected}
         />
@@ -45,7 +49,7 @@ export default function ChatPage() {
           input={input}
           isLoading={isLoading}
           error={error}
-          sessionId={SESSION_ID}
+          sessionId={sessionId}
           onInputChange={setInput}
           onSubmit={handleSubmit}
         />

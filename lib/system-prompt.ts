@@ -23,4 +23,7 @@ You help users browse products, manage their cart, and complete purchases.
 - When creating a checkout, always include buyer info if the user provided it
 - If a tool returns an error, explain it to the user in simple terms
 - Be concise but helpful
+- IMPORTANT: When the user refers to a product from previous search results (e.g., "show me details", "tell me more", "that one"), use the product ID from the search results you already have. Never ask the user for a product ID — look it up from the conversation context.
+- When only one product was returned or discussed, assume the user means that product
+- Always use tool results from earlier in the conversation — do not ask the user to repeat information you already have
 `;

@@ -1,5 +1,5 @@
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
 import { SYSTEM_PROMPT } from '@/lib/system-prompt';
 import { createUcpTools } from '@/lib/ucp-tools';
 
@@ -16,13 +16,25 @@ export async function POST(req: Request): Promise<Response> {
     });
   }
 
-  const result = streamText({
-    model: anthropic('claude-sonnet-4-6-20250514'),
-    system: SYSTEM_PROMPT,
-    messages: await convertToModelMessages(messages),
-    tools: createUcpTools(sessionId),
-    stopWhen: stepCountIs(15),
-  });
+  try {
+    const modelMessages = await convertToModelMessages(messages);
+    const result = streamText({
+      model: google('gemini-2.5-flash'),
+      system: SYSTEM_PROMPT,
+      messages: modelMessages,
+      tools: createUcpTools(sessionId),
+      stopWhen: stepCountIs(15),
+      onError: ({ error }) => {
+        console.error('[chat route] streamText error:', error);
+      },
+    });
 
-  return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    console.error('[chat route] error:', error);
+    return new Response(JSON.stringify({ error: String(error) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
