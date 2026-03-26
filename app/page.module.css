@@ -154,6 +154,7 @@
 
 .agentMsg {
   min-width: 0;
+  max-width: 90%;
 }
 
 .agentText {

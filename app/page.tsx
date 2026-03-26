@@ -209,6 +209,18 @@ function MyUserMessage() {
   );
 }
 
+function ToolCallFallback(props: { toolName: string; result?: unknown; status: { type: string } }) {
+  const isDone = props.status.type === 'complete';
+  return (
+    <div className={styles.toolFallback}>
+      <span className={isDone ? styles.toolDotDone : styles.toolDotRunning} />
+      <span>
+        {isDone ? 'called' : 'calling'} {props.toolName}
+      </span>
+    </div>
+  );
+}
+
 function MyAssistantMessage() {
   return (
     <div className={styles.agentRow}>
@@ -217,6 +229,7 @@ function MyAssistantMessage() {
         <MessagePrimitive.Content
           components={{
             Text: ({ text }) => <p className={styles.agentText}>{text}</p>,
+            tools: { Fallback: ToolCallFallback },
           }}
         />
         <MessagePrimitive.Error>
@@ -229,26 +242,6 @@ function MyAssistantMessage() {
           </ActionBarPrimitive.Reload>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ToolFallbackUI({
-  toolName,
-  argsText,
-  result,
-}: {
-  readonly toolName: string;
-  readonly argsText: string;
-  readonly result: unknown;
-}) {
-  const isDone = result !== undefined;
-  return (
-    <div className={styles.toolFallback}>
-      <span className={isDone ? styles.toolDotDone : styles.toolDotRunning} />
-      <span>
-        {isDone ? 'called' : 'calling'} {toolName}
-      </span>
     </div>
   );
 }
