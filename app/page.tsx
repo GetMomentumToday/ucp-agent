@@ -143,21 +143,29 @@ function MyThread() {
       <ThreadPrimitive.Viewport className={styles.viewport}>
         <ThreadPrimitive.Empty>
           <div className={styles.welcome}>
-            <div className={styles.welcomeIcon}>&#x1F6D2;</div>
-            <h2 className={styles.welcomeTitle}>Welcome to Scout</h2>
+            <div className={styles.welcomeAvatar}>S</div>
+            <h2 className={styles.welcomeTitle}>How can I help you today?</h2>
             <p className={styles.welcomeText}>
-              I can help you find products, compare options, and complete purchases. Try one of
-              these:
+              Search products, compare options, and checkout — all through conversation.
             </p>
             <div className={styles.suggestions}>
               <ThreadPrimitive.Suggestion prompt="Show me running shoes" autoSend>
-                <span className={styles.suggestion}>Show me running shoes</span>
+                <span className={styles.suggestion}>
+                  <span className={styles.suggestionIcon}>👟</span>
+                  Show me running shoes
+                </span>
               </ThreadPrimitive.Suggestion>
               <ThreadPrimitive.Suggestion prompt="What bags do you have?" autoSend>
-                <span className={styles.suggestion}>What bags do you have?</span>
+                <span className={styles.suggestion}>
+                  <span className={styles.suggestionIcon}>👜</span>
+                  What bags do you have?
+                </span>
               </ThreadPrimitive.Suggestion>
               <ThreadPrimitive.Suggestion prompt="Find a jacket under $100" autoSend>
-                <span className={styles.suggestion}>Find a jacket under $100</span>
+                <span className={styles.suggestion}>
+                  <span className={styles.suggestionIcon}>🧥</span>
+                  Find a jacket under $100
+                </span>
               </ThreadPrimitive.Suggestion>
             </div>
           </div>
