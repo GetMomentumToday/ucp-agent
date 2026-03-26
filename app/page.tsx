@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { DefaultChatTransport } from 'ai';
 import {
   AssistantRuntimeProvider,
   ThreadPrimitive,
   ComposerPrimitive,
   MessagePrimitive,
+  ActionBarPrimitive,
+  AuiIf,
   makeAssistantToolUI,
 } from '@assistant-ui/react';
 import { useChatRuntime } from '@assistant-ui/react-ai-sdk';
@@ -46,12 +48,94 @@ function ThemeToggle() {
   );
 }
 
+function CopyIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={12}
+      height={12}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+    >
+      <rect x="5" y="5" width="8" height="8" rx="1.5" />
+      <path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={12}
+      height={12}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path d="M3 8.5l3 3 7-7" />
+    </svg>
+  );
+}
+
+function ReloadIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={12}
+      height={12}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+    >
+      <path d="M2.5 8a5.5 5.5 0 019.3-4M13.5 8a5.5 5.5 0 01-9.3 4" />
+      <path d="M12 1v3.5h-3.5M4 15v-3.5h3.5" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={14}
+      height={14}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  );
+}
+
+function CopyButton() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <ActionBarPrimitive.Copy
+      className={styles.actionBtn}
+      aria-label="Copy message"
+      onClick={() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </ActionBarPrimitive.Copy>
+  );
+}
+
 function MyThread() {
   return (
     <ThreadPrimitive.Root className={styles.threadRoot}>
       <div className={styles.chatHeader}>
         <div className={styles.chatHeaderLeft}>
-          <span className={styles.chatHeaderTitle}>Shopping assistant</span>
+          <span className={styles.agentAvatar}>S</span>
+          <div>
+            <span className={styles.chatHeaderTitle}>Scout</span>
+            <span className={styles.chatHeaderSub}>Shopping assistant</span>
+          </div>
         </div>
         <ThemeToggle />
       </div>
@@ -86,30 +170,85 @@ function MyThread() {
           }}
         />
 
+        <AuiIf condition={(s) => s.thread.isRunning}>
+          <div className={styles.typingRow}>
+            <span className={styles.agentAvatarSmall}>S</span>
+            <div className={styles.typing}>
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+            </div>
+          </div>
+        </AuiIf>
+
         <div style={{ height: 1 }} />
       </ThreadPrimitive.Viewport>
 
+      <ScrollToBottomButton />
       <MyComposer />
     </ThreadPrimitive.Root>
   );
 }
 
+function ScrollToBottomButton() {
+  return (
+    <ThreadPrimitive.ScrollToBottom className={styles.scrollToBottom}>
+      <ChevronDownIcon />
+    </ThreadPrimitive.ScrollToBottom>
+  );
+}
+
 function MyUserMessage() {
   return (
-    <div className={`${styles.msg} ${styles.userMsg}`}>
-      <MessagePrimitive.Content />
+    <div className={styles.userRow}>
+      <div className={`${styles.msg} ${styles.userMsg}`}>
+        <MessagePrimitive.Content />
+      </div>
+      <span className={styles.userAvatar}>U</span>
     </div>
   );
 }
 
 function MyAssistantMessage() {
   return (
-    <div className={`${styles.msg} ${styles.agentMsg}`}>
-      <MessagePrimitive.Content
-        components={{
-          Text: ({ text }) => <p className={styles.agentText}>{text}</p>,
-        }}
-      />
+    <div className={styles.agentRow}>
+      <span className={styles.agentAvatarSmall}>S</span>
+      <div className={`${styles.msg} ${styles.agentMsg}`}>
+        <MessagePrimitive.Content
+          components={{
+            Text: ({ text }) => <p className={styles.agentText}>{text}</p>,
+          }}
+        />
+        <MessagePrimitive.Error>
+          <div className={styles.errorMsg}>Something went wrong. Please try again.</div>
+        </MessagePrimitive.Error>
+        <div className={styles.actionBar}>
+          <CopyButton />
+          <ActionBarPrimitive.Reload className={styles.actionBtn} aria-label="Regenerate">
+            <ReloadIcon />
+          </ActionBarPrimitive.Reload>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ToolFallbackUI({
+  toolName,
+  argsText,
+  result,
+}: {
+  readonly toolName: string;
+  readonly argsText: string;
+  readonly result: unknown;
+}) {
+  const isDone = result !== undefined;
+  return (
+    <div className={styles.toolFallback}>
+      <span className={isDone ? styles.toolDotDone : styles.toolDotRunning} />
+      <span>
+        {isDone ? 'called' : 'calling'} {toolName}
+      </span>
     </div>
   );
 }
