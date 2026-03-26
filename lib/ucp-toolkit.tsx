@@ -64,37 +64,79 @@ interface ToolRenderProps {
   readonly status: { readonly type: string };
 }
 
-function LoadingIndicator({ toolName }: { readonly toolName: string }) {
-  return <ToolIndicator toolName={toolName} state="running" />;
+function ToolBlock({
+  toolName,
+  status,
+  children,
+}: {
+  readonly toolName: string;
+  readonly status: string;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <div className="tool-block">
+      <ToolIndicator toolName={toolName} state={status === 'running' ? 'running' : 'result'} />
+      {children}
+    </div>
+  );
 }
 
 function SearchProductsUI({ result, status }: ToolRenderProps) {
-  if (status.type === 'running') return <LoadingIndicator toolName="ucp_search_products" />;
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== 'object') {
+    return (
+      <ToolBlock toolName="ucp_search_products" status={status.type}>
+        <></>
+      </ToolBlock>
+    );
+  }
   if ('error' in (result as Record<string, unknown>)) return null;
-  if (isProductArray(result)) return <ProductCards products={result} />;
+  if (isProductArray(result)) {
+    return (
+      <ToolBlock toolName="ucp_search_products" status={status.type}>
+        <ProductCards products={result} />
+      </ToolBlock>
+    );
+  }
   return null;
 }
 
 function GetProductUI({ result, status }: ToolRenderProps) {
-  if (status.type === 'running') return <LoadingIndicator toolName="ucp_get_product" />;
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== 'object') {
+    return (
+      <ToolBlock toolName="ucp_get_product" status={status.type}>
+        <></>
+      </ToolBlock>
+    );
+  }
   if ('error' in (result as Record<string, unknown>)) return null;
-  if (isProduct(result)) return <ProductCards products={[result]} />;
+  if (isProduct(result)) {
+    return (
+      <ToolBlock toolName="ucp_get_product" status={status.type}>
+        <ProductCards products={[result]} />
+      </ToolBlock>
+    );
+  }
   return null;
 }
 
 function CreateCheckoutUI({ result, status }: ToolRenderProps) {
-  if (status.type === 'running') return <LoadingIndicator toolName="ucp_create_checkout" />;
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== 'object') {
+    return (
+      <ToolBlock toolName="ucp_create_checkout" status={status.type}>
+        <></>
+      </ToolBlock>
+    );
+  }
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.totals && result.totals.length > 0) {
     return (
-      <CheckoutCard
-        currency={result.currency ?? 'USD'}
-        lineItems={result.line_items ?? []}
-        totals={result.totals}
-      />
+      <ToolBlock toolName="ucp_create_checkout" status={status.type}>
+        <CheckoutCard
+          currency={result.currency ?? 'USD'}
+          lineItems={result.line_items ?? []}
+          totals={result.totals}
+        />
+      </ToolBlock>
     );
   }
   return null;
@@ -117,54 +159,75 @@ function UpdateCheckoutUI({ result, status }: ToolRenderProps) {
   const handleConfirm = useSendMessage('Yes, place the order');
   const handleCancel = useSendMessage('Cancel the order');
 
-  if (status.type === 'running') return <LoadingIndicator toolName="ucp_update_checkout" />;
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== 'object') {
+    return (
+      <ToolBlock toolName="ucp_update_checkout" status={status.type}>
+        <></>
+      </ToolBlock>
+    );
+  }
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.totals && result.totals.length > 0) {
     const showActions = hasShippingAndTax(result);
     return (
-      <CheckoutCard
-        currency={result.currency ?? 'USD'}
-        lineItems={result.line_items ?? []}
-        totals={result.totals}
-        onConfirm={showActions ? handleConfirm : undefined}
-        onCancel={showActions ? handleCancel : undefined}
-      />
+      <ToolBlock toolName="ucp_update_checkout" status={status.type}>
+        <CheckoutCard
+          currency={result.currency ?? 'USD'}
+          lineItems={result.line_items ?? []}
+          totals={result.totals}
+          onConfirm={showActions ? handleConfirm : undefined}
+          onCancel={showActions ? handleCancel : undefined}
+        />
+      </ToolBlock>
     );
   }
   return null;
 }
 
 function CompleteCheckoutUI({ result, status }: ToolRenderProps) {
-  if (status.type === 'running') return <LoadingIndicator toolName="ucp_complete_checkout" />;
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== 'object') {
+    return (
+      <ToolBlock toolName="ucp_complete_checkout" status={status.type}>
+        <></>
+      </ToolBlock>
+    );
+  }
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.order_id) {
     const totalEntry = result.totals?.find((t) => t.type === 'total');
     return (
-      <OrderCard
-        orderId={result.order_id}
-        totalCents={totalEntry?.amount ?? 0}
-        currency={result.currency ?? 'USD'}
-        status={result.status}
-      />
+      <ToolBlock toolName="ucp_complete_checkout" status={status.type}>
+        <OrderCard
+          orderId={result.order_id}
+          totalCents={totalEntry?.amount ?? 0}
+          currency={result.currency ?? 'USD'}
+          status={result.status}
+        />
+      </ToolBlock>
     );
   }
   return null;
 }
 
 function GetOrderUI({ result, status }: ToolRenderProps) {
-  if (status.type === 'running') return <LoadingIndicator toolName="ucp_get_order" />;
-  if (!result || typeof result !== 'object') return null;
+  if (!result || typeof result !== 'object') {
+    return (
+      <ToolBlock toolName="ucp_get_order" status={status.type}>
+        <></>
+      </ToolBlock>
+    );
+  }
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isOrder(result)) {
     return (
-      <OrderCard
-        orderId={result.id}
-        totalCents={result.total_cents}
-        currency={result.currency}
-        status={result.status}
-      />
+      <ToolBlock toolName="ucp_get_order" status={status.type}>
+        <OrderCard
+          orderId={result.id}
+          totalCents={result.total_cents}
+          currency={result.currency}
+          status={result.status}
+        />
+      </ToolBlock>
     );
   }
   return null;
