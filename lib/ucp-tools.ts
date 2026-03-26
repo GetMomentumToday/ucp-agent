@@ -38,7 +38,7 @@ export function createUcpTools(sessionId: string) {
     ucp_discover: tool({
       description:
         'Discover the store capabilities, supported payment handlers, and API version. Call this first before any checkout operations.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         try {
           return await client.discover();
@@ -50,7 +50,7 @@ export function createUcpTools(sessionId: string) {
 
     ucp_search_products: tool({
       description: 'Search for products by keyword. Returns matching products with prices and stock.',
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe('Search keyword (e.g., "shoes", "sneakers")'),
         max_price_cents: z.number().int().optional().describe('Maximum price in cents'),
         min_price_cents: z.number().int().optional().describe('Minimum price in cents'),
@@ -69,7 +69,7 @@ export function createUcpTools(sessionId: string) {
 
     ucp_get_product: tool({
       description: 'Get detailed product information by ID, including variants and stock.',
-      parameters: z.object({
+      inputSchema: z.object({
         product_id: z.string().describe('The product ID'),
       }),
       execute: async ({ product_id }) => {
@@ -84,7 +84,7 @@ export function createUcpTools(sessionId: string) {
     ucp_create_checkout: tool({
       description:
         'Create a new checkout session (cart) with line items. Returns the checkout session with totals.',
-      parameters: z.object({
+      inputSchema: z.object({
         line_items: z
           .array(
             z.object({
@@ -119,7 +119,7 @@ export function createUcpTools(sessionId: string) {
     ucp_update_checkout: tool({
       description:
         'Update an existing checkout session — set buyer info, shipping address, or fulfillment method.',
-      parameters: z.object({
+      inputSchema: z.object({
         checkout_id: z
           .string()
           .optional()
@@ -193,7 +193,7 @@ export function createUcpTools(sessionId: string) {
     ucp_complete_checkout: tool({
       description:
         'Complete a checkout session by submitting payment. Use a payment handler ID from ucp_discover.',
-      parameters: z.object({
+      inputSchema: z.object({
         checkout_id: z
           .string()
           .optional()
@@ -228,7 +228,7 @@ export function createUcpTools(sessionId: string) {
 
     ucp_cancel_checkout: tool({
       description: 'Cancel an active checkout session.',
-      parameters: z.object({
+      inputSchema: z.object({
         checkout_id: z
           .string()
           .optional()
@@ -251,7 +251,7 @@ export function createUcpTools(sessionId: string) {
 
     ucp_get_order: tool({
       description: 'Get order status and details by order ID.',
-      parameters: z.object({
+      inputSchema: z.object({
         order_id: z.string().describe('The order ID returned after completing checkout'),
       }),
       execute: async ({ order_id }) => {

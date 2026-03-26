@@ -14,9 +14,10 @@
     "check:comments": "bash scripts/no-descriptive-comments.sh"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.0",
+    "@ai-sdk/anthropic": "^3.0.64",
+    "@ai-sdk/react": "^3.0.140",
     "@momentum/ucp-client": "file:../ucp-client/packages/ucp-client",
-    "ai": "^4.0.0",
+    "ai": "^6.0.138",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

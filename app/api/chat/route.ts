@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { SYSTEM_PROMPT } from '@/lib/system-prompt';
 import { createUcpTools } from '@/lib/ucp-tools';
@@ -6,7 +6,7 @@ import { createUcpTools } from '@/lib/ucp-tools';
 export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<Response> {
-  const body = (await req.json()) as { messages?: unknown[]; sessionId?: string };
+  const body = (await req.json()) as { messages?: UIMessage[]; sessionId?: string };
   const { messages, sessionId = 'default' } = body;
 
   if (!Array.isArray(messages)) {
@@ -19,10 +19,10 @@ export async function POST(req: Request): Promise<Response> {
   const result = streamText({
     model: anthropic('claude-sonnet-4-6-20250514'),
     system: SYSTEM_PROMPT,
-    messages: messages as Parameters<typeof streamText>[0]['messages'],
+    messages: await convertToModelMessages(messages),
     tools: createUcpTools(sessionId),
-    maxSteps: 15,
+    stopWhen: stepCountIs(15),
   });
 
-  return result.toDataStreamResponse();
+  return result.toUIMessageStreamResponse();
 }

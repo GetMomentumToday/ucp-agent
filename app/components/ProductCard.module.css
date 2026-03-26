@@ -1,0 +1,37 @@
+.cards {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.card {
+  border: 0.5px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  width: 140px;
+  background: var(--color-bg-primary);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.card:hover {
+  border-color: var(--color-border-secondary);
+}
+
+.name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.price {
+  font-size: 12px;
+  color: var(--color-text-success);
+}
+
+.stock {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}

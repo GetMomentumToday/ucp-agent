@@ -1,0 +1,54 @@
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  border-right: 0.5px solid var(--color-border-primary);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--color-bg-secondary);
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  padding: 4px 8px 12px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 8px 4px;
+}
+
+.item {
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--color-bg-primary);
+}
+
+.active {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-weight: 500;
+  border: 0.5px solid var(--color-border-primary);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.debug {
+  font-size: 11px;
+  padding: 4px 8px;
+  color: var(--color-text-tertiary);
+}

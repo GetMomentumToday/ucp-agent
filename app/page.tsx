@@ -1,53 +1,74 @@
 'use client';
 
+import { useState } from 'react';
+import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
+import { Sidebar } from './components/Sidebar';
+import { ChatArea } from './components/ChatArea';
+import styles from './page.module.css';
+
+const SESSION_ID = `sess_${Math.random().toString(36).slice(2, 8)}`;
+
+const transport = new DefaultChatTransport({
+  api: '/api/chat',
+  body: { sessionId: SESSION_ID },
+});
 
 export default function ChatPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/chat',
-  });
+  const { messages, status, error, sendMessage } = useChat({ transport });
+
+  const [input, setInput] = useState('');
+  const [gatewayConnected] = useState(true);
+
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  const checkoutId = extractCheckoutId(messages);
+
+  const handleSubmit = (): void => {
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    void sendMessage({ text });
+  };
 
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: 24, fontFamily: 'system-ui' }}>
-      <h1>UCP Shopping Assistant</h1>
-
-      <div style={{ marginBottom: 16 }}>
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            style={{
-              padding: '8px 12px',
-              margin: '4px 0',
-              borderRadius: 8,
-              background: m.role === 'user' ? '#e3f2fd' : '#f5f5f5',
-            }}
-          >
-            <strong>{m.role === 'user' ? 'You' : 'Assistant'}:</strong>
-            <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
-          </div>
-        ))}
-      </div>
-
-      {error && (
-        <div style={{ color: 'red', marginBottom: 8 }}>Error: {error.message}</div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8 }}>
-        <input
-          value={input}
-          onChange={handleInputChange}
-          placeholder="Search for products, ask about orders..."
-          style={{ flex: 1, padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
-          disabled={isLoading}
+    <main className={styles.main}>
+      <div className={styles.header}>localhost:3001 — demo page</div>
+      <div className={styles.wrap}>
+        <Sidebar
+          sessionId={SESSION_ID}
+          checkoutId={checkoutId}
+          gatewayConnected={gatewayConnected}
         />
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{ padding: '8px 16px', borderRadius: 4, cursor: 'pointer' }}
-        >
-          {isLoading ? '...' : 'Send'}
-        </button>
-      </form>
+        <ChatArea
+          messages={messages}
+          input={input}
+          isLoading={isLoading}
+          error={error}
+          sessionId={SESSION_ID}
+          onInputChange={setInput}
+          onSubmit={handleSubmit}
+        />
+      </div>
     </main>
   );
+}
+
+function extractCheckoutId(messages: readonly { parts: readonly { type: string }[] }[]): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (!msg) continue;
+    for (const part of msg.parts) {
+      if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
+        const toolPart = part as { output?: unknown };
+        if (toolPart.output && typeof toolPart.output === 'object' && 'id' in toolPart.output) {
+          const output = toolPart.output as { id?: string; status?: string };
+          if (output.id && output.status) {
+            return output.id;
+          }
+        }
+      }
+    }
+  }
+  return null;
 }
