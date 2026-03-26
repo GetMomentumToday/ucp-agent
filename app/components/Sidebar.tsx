@@ -2,20 +2,14 @@
 
 import styles from './Sidebar.module.css';
 
-interface SidebarProps {
-  readonly sessionId: string;
-  readonly checkoutId: string | null;
-  readonly gatewayConnected: boolean;
-}
-
 function handleNewConversation() {
   window.location.reload();
 }
 
-export function Sidebar({ sessionId, checkoutId, gatewayConnected }: SidebarProps) {
+export function Sidebar() {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.title}>UCP Agent</div>
+      <div className={styles.title}>Scout</div>
 
       <div className={styles.label}>Conversations</div>
       <div className={`${styles.item} ${styles.active}`}>Shopping chat</div>
@@ -25,12 +19,9 @@ export function Sidebar({ sessionId, checkoutId, gatewayConnected }: SidebarProp
 
       <div className={styles.spacer} />
 
-      <div className={styles.label}>Debug</div>
-      <div className={styles.debug}>
-        Gateway: {gatewayConnected ? '\u2713' : '\u2717'} localhost:3000
+      <div className={styles.powered}>
+        Powered by <strong>Momentum</strong>
       </div>
-      <div className={styles.debug}>Session: {sessionId}</div>
-      {checkoutId && <div className={styles.debug}>Checkout: {checkoutId}</div>}
     </aside>
   );
 }
