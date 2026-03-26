@@ -230,7 +230,16 @@ function MyAssistantMessage() {
           components={{
             Text: ({ text }) => {
               if (!text.trim()) return null;
-              return <p className={styles.agentText}>{text}</p>;
+              return (
+                <p
+                  className={styles.agentText}
+                  dangerouslySetInnerHTML={{
+                    __html: text
+                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\n/g, '<br />'),
+                  }}
+                />
+              );
             },
             tools: { Fallback: ToolCallFallback },
           }}
@@ -284,9 +293,8 @@ export default function ChatPage() {
       ))}
 
       <main className={styles.main}>
-        <div className={styles.header}>localhost:3001</div>
         <div className={styles.wrap}>
-          <Sidebar sessionId={sessionId} checkoutId={null} gatewayConnected={true} />
+          <Sidebar />
           <MyThread />
         </div>
       </main>
