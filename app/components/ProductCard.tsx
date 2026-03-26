@@ -59,7 +59,10 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className={styles.body}>
         <div className={styles.name}>{product.title}</div>
         {snippet && <div className={styles.snippet}>{snippet}</div>}
-        <div className={styles.price}>{formatPrice(product.price_cents, product.currency)}</div>
+        <div className={styles.priceRow}>
+          <div className={styles.price}>{formatPrice(product.price_cents, product.currency)}</div>
+          {product.in_stock && <span className={styles.cta}>View →</span>}
+        </div>
       </div>
     </div>
   );
