@@ -149,10 +149,10 @@ function MyThread() {
               Search products, compare options, and checkout — all through conversation.
             </p>
             <div className={styles.suggestions}>
-              <ThreadPrimitive.Suggestion prompt="Show me running shoes" autoSend>
+              <ThreadPrimitive.Suggestion prompt="Show me fitness gear" autoSend>
                 <span className={styles.suggestion}>
-                  <span className={styles.suggestionIcon}>👟</span>
-                  Show me running shoes
+                  <span className={styles.suggestionIcon}>💪</span>
+                  Show me fitness gear
                 </span>
               </ThreadPrimitive.Suggestion>
               <ThreadPrimitive.Suggestion prompt="What bags do you have?" autoSend>
@@ -161,10 +161,9 @@ function MyThread() {
                   What bags do you have?
                 </span>
               </ThreadPrimitive.Suggestion>
-              <ThreadPrimitive.Suggestion prompt="Find a jacket under $100" autoSend>
+              <ThreadPrimitive.Suggestion prompt="I need a new watch" autoSend>
                 <span className={styles.suggestion}>
-                  <span className={styles.suggestionIcon}>🧥</span>
-                  Find a jacket under $100
+                  <span className={styles.suggestionIcon}>⌚</span>I need a new watch
                 </span>
               </ThreadPrimitive.Suggestion>
             </div>
