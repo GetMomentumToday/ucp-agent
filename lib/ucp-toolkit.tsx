@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { useThreadRuntime } from '@assistant-ui/react';
 import { ProductCards } from '@/app/components/ProductCard';
 import { OrderCard } from '@/app/components/OrderCard';
-import { TotalsBox } from '@/app/components/TotalsBox';
+import { CheckoutCard } from '@/app/components/CheckoutCard';
 import { ToolIndicator } from '@/app/components/ToolIndicator';
 
 interface Product {
@@ -58,38 +58,6 @@ function isOrder(
   return typeof value === 'object' && value !== null && 'total_cents' in value && 'status' in value;
 }
 
-function formatCents(cents: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
-}
-
-function buildTotalsFromCheckout(session: CheckoutSession) {
-  const lines: { label: string; amount: string }[] = [];
-  const currency = session.currency ?? 'USD';
-
-  if (session.line_items) {
-    for (const li of session.line_items) {
-      const title = li.item.title ?? 'Item';
-      lines.push({ label: `${title} x${li.quantity}`, amount: '' });
-    }
-  }
-
-  let totalLine = { label: 'Total', amount: '$0.00' };
-
-  if (session.totals) {
-    for (const t of session.totals) {
-      const label = t.display_text ?? t.type.charAt(0).toUpperCase() + t.type.slice(1);
-      const amount = formatCents(t.amount, currency);
-      if (t.type === 'total') {
-        totalLine = { label, amount };
-      } else {
-        lines.push({ label, amount });
-      }
-    }
-  }
-
-  return { lines, total: totalLine };
-}
-
 interface ToolRenderProps {
   readonly args: Record<string, unknown>;
   readonly result: unknown;
@@ -121,8 +89,13 @@ function CreateCheckoutUI({ result, status }: ToolRenderProps) {
   if (!result || typeof result !== 'object') return null;
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.totals && result.totals.length > 0) {
-    const { lines, total } = buildTotalsFromCheckout(result);
-    return <TotalsBox lines={lines} total={total} />;
+    return (
+      <CheckoutCard
+        currency={result.currency ?? 'USD'}
+        lineItems={result.line_items ?? []}
+        totals={result.totals}
+      />
+    );
   }
   return null;
 }
@@ -148,12 +121,12 @@ function UpdateCheckoutUI({ result, status }: ToolRenderProps) {
   if (!result || typeof result !== 'object') return null;
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.totals && result.totals.length > 0) {
-    const { lines, total } = buildTotalsFromCheckout(result);
     const showActions = hasShippingAndTax(result);
     return (
-      <TotalsBox
-        lines={lines}
-        total={total}
+      <CheckoutCard
+        currency={result.currency ?? 'USD'}
+        lineItems={result.line_items ?? []}
+        totals={result.totals}
         onConfirm={showActions ? handleConfirm : undefined}
         onCancel={showActions ? handleCancel : undefined}
       />
