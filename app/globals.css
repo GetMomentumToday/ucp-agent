@@ -46,3 +46,7 @@ body {
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
 }
+
+.tool-block {
+  margin: 4px 0;
+}
