@@ -1,4 +1,4 @@
-import type { AssistantStreamChunk } from 'assistant-stream';
+import { createAssistantStream, type AssistantStream } from 'assistant-stream';
 import type { ThreadMessage } from '@assistant-ui/core';
 import {
   saveConversation,
@@ -56,12 +56,15 @@ export class LocalStorageThreadListAdapter {
   }
 
   initialize(threadId: string): Promise<RemoteThreadInitializeResponse> {
-    saveConversation({
-      remoteId: threadId,
-      title: undefined,
-      status: 'regular',
-      createdAt: Date.now(),
-    });
+    const existing = findConversation(threadId);
+    if (!existing) {
+      saveConversation({
+        remoteId: threadId,
+        title: undefined,
+        status: 'regular',
+        createdAt: Date.now(),
+      });
+    }
     return Promise.resolve({ remoteId: threadId, externalId: undefined });
   }
 
@@ -85,24 +88,15 @@ export class LocalStorageThreadListAdapter {
     return Promise.resolve();
   }
 
-  generateTitle(
-    remoteId: string,
-    messages: readonly ThreadMessage[],
-  ): Promise<ReadableStream<AssistantStreamChunk>> {
+  generateTitle(remoteId: string, messages: readonly ThreadMessage[]): Promise<AssistantStream> {
     const title = extractTitle(messages);
     updateConversation(remoteId, { title });
 
-    const stream = new ReadableStream<AssistantStreamChunk>({
-      start(controller) {
-        controller.enqueue({
-          type: 'text-delta',
-          textDelta: title,
-          path: [],
-        } as AssistantStreamChunk);
-        controller.close();
-      },
-    });
-    return Promise.resolve(stream);
+    return Promise.resolve(
+      createAssistantStream((controller) => {
+        controller.appendText(title);
+      }),
+    );
   }
 
   fetch(threadId: string): Promise<RemoteThreadMetadata> {
