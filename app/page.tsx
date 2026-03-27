@@ -10,17 +10,16 @@ import {
   ActionBarPrimitive,
   AuiIf,
   makeAssistantToolUI,
+  useRemoteThreadListRuntime,
 } from '@assistant-ui/react';
-import { useChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { useAISDKRuntime } from '@assistant-ui/react-ai-sdk';
 import { useAuiState } from '@assistant-ui/store';
+import { useChat } from '@ai-sdk/react';
 import { useTheme } from 'next-themes';
 import { UCP_TOOL_RENDER } from '@/lib/ucp-toolkit';
+import { LocalStorageThreadListAdapter } from '@/lib/localStorage-thread-list-adapter';
 import { Sidebar } from './components/Sidebar';
 import styles from './page.module.css';
-
-function useStableSessionId(): string {
-  return useMemo(() => `sess_${Math.random().toString(36).slice(2, 8)}`, []);
-}
 
 const TOOL_NAMES = Object.keys(UCP_TOOL_RENDER);
 
@@ -294,15 +293,26 @@ function MyComposer() {
   );
 }
 
-export default function ChatPage() {
-  const sessionId = useStableSessionId();
+function useChatThreadRuntime() {
+  const id = useAuiState((s) => s.threadListItem.id);
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: '/api/chat', body: { sessionId } }),
-    [sessionId],
+    () => new DefaultChatTransport({ api: '/api/chat', body: { sessionId: id } }),
+    [id],
   );
 
-  const runtime = useChatRuntime({ transport });
+  const chat = useChat({ id, transport });
+  return useAISDKRuntime(chat);
+}
+
+export default function ChatPage() {
+  const adapter = useMemo(() => new LocalStorageThreadListAdapter(), []);
+
+  const runtime = useRemoteThreadListRuntime({
+    runtimeHook: useChatThreadRuntime,
+    adapter,
+    allowNesting: true,
+  });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>

@@ -1,9 +1,22 @@
 'use client';
 
+import { ThreadListPrimitive, ThreadListItemPrimitive } from '@assistant-ui/react';
 import styles from './Sidebar.module.css';
 
-function handleNewConversation() {
-  window.location.reload();
+function ConversationItem() {
+  return (
+    <ThreadListItemPrimitive.Root className={styles.itemRoot}>
+      <ThreadListItemPrimitive.Trigger className={styles.item}>
+        <span className={styles.itemIcon}>💬</span>
+        <div className={styles.itemContent}>
+          <ThreadListItemPrimitive.Title fallback="New chat" />
+        </div>
+      </ThreadListItemPrimitive.Trigger>
+      <ThreadListItemPrimitive.Delete className={styles.deleteBtn} aria-label="Delete conversation">
+        ×
+      </ThreadListItemPrimitive.Delete>
+    </ThreadListItemPrimitive.Root>
+  );
 }
 
 export function Sidebar() {
@@ -15,17 +28,16 @@ export function Sidebar() {
       </div>
 
       <div className={styles.label}>Conversations</div>
-      <div className={`${styles.item} ${styles.active}`}>
-        <span className={styles.itemIcon}>🛍️</span>
-        <div>
-          <div className={styles.itemTitle}>Shopping chat</div>
-          <div className={styles.itemMeta}>Just now</div>
-        </div>
+
+      <div className={styles.conversationList}>
+        <ThreadListPrimitive.Root>
+          <ThreadListPrimitive.New className={styles.newBtn}>
+            <span className={styles.newBtnIcon}>+</span>
+            New conversation
+          </ThreadListPrimitive.New>
+          <ThreadListPrimitive.Items components={{ ThreadListItem: ConversationItem }} />
+        </ThreadListPrimitive.Root>
       </div>
-      <button type="button" className={styles.newBtn} onClick={handleNewConversation}>
-        <span className={styles.newBtnIcon}>+</span>
-        New conversation
-      </button>
 
       <div className={styles.spacer} />
 
