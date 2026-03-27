@@ -12,6 +12,7 @@ import {
   makeAssistantToolUI,
 } from '@assistant-ui/react';
 import { useChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { useAuiState } from '@assistant-ui/store';
 import { useTheme } from 'next-themes';
 import { UCP_TOOL_RENDER } from '@/lib/ucp-toolkit';
 import { Sidebar } from './components/Sidebar';
@@ -228,37 +229,48 @@ function ToolCallFallback(props: { toolName: string; result?: unknown; status: {
   );
 }
 
+function AgentTextBlock({ text }: { readonly text: string }) {
+  if (!text.trim()) return null;
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+    .replace(/\n/g, '<br />');
+  return <div className={styles.agentText} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+function HasTextContent({ children }: { readonly children: React.ReactNode }) {
+  const hasText = useAuiState((s) =>
+    s.message.parts.some((p: { type: string }) => p.type === 'text'),
+  );
+  return hasText ? <>{children}</> : null;
+}
+
 function MyAssistantMessage() {
   return (
     <div className={styles.agentRow}>
-      <span className={styles.agentAvatarSmall}>S</span>
+      <HasTextContent>
+        <span className={styles.agentAvatarSmall}>S</span>
+      </HasTextContent>
       <div className={`${styles.msg} ${styles.agentMsg}`}>
         <MessagePrimitive.Content
           components={{
-            Text: ({ text }) => {
-              if (!text.trim()) return null;
-              const html = text
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
-                .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
-                .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
-                .replace(/\n/g, '<br />');
-              return (
-                <div className={styles.agentText} dangerouslySetInnerHTML={{ __html: html }} />
-              );
-            },
+            Text: AgentTextBlock,
             tools: { Fallback: ToolCallFallback },
           }}
         />
         <MessagePrimitive.Error>
           <div className={styles.errorMsg}>Something went wrong. Please try again.</div>
         </MessagePrimitive.Error>
-        <div className={styles.actionBar}>
-          <CopyButton />
-          <ActionBarPrimitive.Reload className={styles.actionBtn} aria-label="Regenerate">
-            <ReloadIcon />
-          </ActionBarPrimitive.Reload>
-        </div>
+        <HasTextContent>
+          <div className={styles.actionBar}>
+            <CopyButton />
+            <ActionBarPrimitive.Reload className={styles.actionBtn} aria-label="Regenerate">
+              <ReloadIcon />
+            </ActionBarPrimitive.Reload>
+          </div>
+        </HasTextContent>
       </div>
     </div>
   );
