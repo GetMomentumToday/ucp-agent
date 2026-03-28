@@ -22,7 +22,7 @@ export async function POST(req: Request): Promise<Response> {
       model: getModel(),
       system: buildSystemPrompt(),
       messages: modelMessages,
-      tools: createUcpTools(sessionId),
+      tools: await createUcpTools(sessionId),
       stopWhen: stepCountIs(15),
       onError: ({ error }) => {
         console.error('[chat route] streamText error:', error);
