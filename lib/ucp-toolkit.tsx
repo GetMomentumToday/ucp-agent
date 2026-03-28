@@ -14,6 +14,7 @@ interface Product {
   readonly currency: string;
   readonly in_stock: boolean;
   readonly images?: readonly string[];
+  readonly description?: string | null;
 }
 
 interface TotalLine {
@@ -22,13 +23,20 @@ interface TotalLine {
   readonly display_text?: string;
 }
 
+interface Order {
+  readonly id: string;
+  readonly status: string;
+  readonly total_cents: number;
+  readonly currency: string;
+}
+
 interface CheckoutSession {
   readonly id: string;
   readonly status: string;
-  readonly order_id?: string;
+  readonly order?: Order;
   readonly totals?: readonly TotalLine[];
   readonly line_items?: readonly {
-    readonly item: { readonly title?: string };
+    readonly item: { readonly title?: string; readonly id?: string };
     readonly quantity: number;
   }[];
   readonly currency?: string;
@@ -52,9 +60,7 @@ function isCheckoutSession(value: unknown): value is CheckoutSession {
   return typeof value === 'object' && value !== null && 'id' in value && 'status' in value;
 }
 
-function isOrder(
-  value: unknown,
-): value is { id: string; total_cents: number; currency: string; status: string } {
+function isOrder(value: unknown): value is Order {
   return typeof value === 'object' && value !== null && 'total_cents' in value && 'status' in value;
 }
 
@@ -84,7 +90,7 @@ function ToolBlock({
 function SearchProductsUI({ result, status }: ToolRenderProps) {
   if (!result || typeof result !== 'object') {
     return (
-      <ToolBlock toolName="ucp_search_products" status={status.type}>
+      <ToolBlock toolName="search_products" status={status.type}>
         <></>
       </ToolBlock>
     );
@@ -92,7 +98,7 @@ function SearchProductsUI({ result, status }: ToolRenderProps) {
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isProductArray(result)) {
     return (
-      <ToolBlock toolName="ucp_search_products" status={status.type}>
+      <ToolBlock toolName="search_products" status={status.type}>
         <ProductCards products={result} />
       </ToolBlock>
     );
@@ -103,7 +109,7 @@ function SearchProductsUI({ result, status }: ToolRenderProps) {
 function GetProductUI({ result, status }: ToolRenderProps) {
   if (!result || typeof result !== 'object') {
     return (
-      <ToolBlock toolName="ucp_get_product" status={status.type}>
+      <ToolBlock toolName="get_product" status={status.type}>
         <></>
       </ToolBlock>
     );
@@ -111,7 +117,7 @@ function GetProductUI({ result, status }: ToolRenderProps) {
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isProduct(result)) {
     return (
-      <ToolBlock toolName="ucp_get_product" status={status.type}>
+      <ToolBlock toolName="get_product" status={status.type}>
         <ProductCards products={[result]} />
       </ToolBlock>
     );
@@ -119,10 +125,10 @@ function GetProductUI({ result, status }: ToolRenderProps) {
   return null;
 }
 
-function CreateCheckoutUI({ result, status }: ToolRenderProps) {
+function CheckoutUI({ result, status, toolName }: ToolRenderProps & { toolName: string }) {
   if (!result || typeof result !== 'object') {
     return (
-      <ToolBlock toolName="ucp_create_checkout" status={status.type}>
+      <ToolBlock toolName={toolName} status={status.type}>
         <></>
       </ToolBlock>
     );
@@ -130,7 +136,7 @@ function CreateCheckoutUI({ result, status }: ToolRenderProps) {
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.totals && result.totals.length > 0) {
     return (
-      <ToolBlock toolName="ucp_create_checkout" status={status.type}>
+      <ToolBlock toolName={toolName} status={status.type}>
         <CheckoutCard
           currency={result.currency ?? 'USD'}
           lineItems={result.line_items ?? []}
@@ -142,10 +148,10 @@ function CreateCheckoutUI({ result, status }: ToolRenderProps) {
   return null;
 }
 
-function hasShippingAndTax(session: CheckoutSession): boolean {
+function hasShippingOrTax(session: CheckoutSession): boolean {
   if (!session.totals) return false;
   const types = session.totals.map((t) => t.type);
-  return types.includes('shipping') && types.includes('tax');
+  return types.includes('shipping') || types.includes('tax');
 }
 
 function useSendMessage(text: string) {
@@ -161,16 +167,16 @@ function UpdateCheckoutUI({ result, status }: ToolRenderProps) {
 
   if (!result || typeof result !== 'object') {
     return (
-      <ToolBlock toolName="ucp_update_checkout" status={status.type}>
+      <ToolBlock toolName="update_checkout" status={status.type}>
         <></>
       </ToolBlock>
     );
   }
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isCheckoutSession(result) && result.totals && result.totals.length > 0) {
-    const showActions = hasShippingAndTax(result);
+    const showActions = hasShippingOrTax(result);
     return (
-      <ToolBlock toolName="ucp_update_checkout" status={status.type}>
+      <ToolBlock toolName="update_checkout" status={status.type}>
         <CheckoutCard
           currency={result.currency ?? 'USD'}
           lineItems={result.line_items ?? []}
@@ -187,21 +193,20 @@ function UpdateCheckoutUI({ result, status }: ToolRenderProps) {
 function CompleteCheckoutUI({ result, status }: ToolRenderProps) {
   if (!result || typeof result !== 'object') {
     return (
-      <ToolBlock toolName="ucp_complete_checkout" status={status.type}>
+      <ToolBlock toolName="complete_checkout" status={status.type}>
         <></>
       </ToolBlock>
     );
   }
   if ('error' in (result as Record<string, unknown>)) return null;
-  if (isCheckoutSession(result) && result.order_id) {
-    const totalEntry = result.totals?.find((t) => t.type === 'total');
+  if (isCheckoutSession(result) && result.order?.id) {
     return (
-      <ToolBlock toolName="ucp_complete_checkout" status={status.type}>
+      <ToolBlock toolName="complete_checkout" status={status.type}>
         <OrderCard
-          orderId={result.order_id}
-          totalCents={totalEntry?.amount ?? 0}
-          currency={result.currency ?? 'USD'}
-          status={result.status}
+          orderId={result.order.id}
+          totalCents={result.order.total_cents}
+          currency={result.order.currency ?? result.currency ?? 'USD'}
+          status={result.order.status}
         />
       </ToolBlock>
     );
@@ -212,7 +217,7 @@ function CompleteCheckoutUI({ result, status }: ToolRenderProps) {
 function GetOrderUI({ result, status }: ToolRenderProps) {
   if (!result || typeof result !== 'object') {
     return (
-      <ToolBlock toolName="ucp_get_order" status={status.type}>
+      <ToolBlock toolName="get_order" status={status.type}>
         <></>
       </ToolBlock>
     );
@@ -220,7 +225,7 @@ function GetOrderUI({ result, status }: ToolRenderProps) {
   if ('error' in (result as Record<string, unknown>)) return null;
   if (isOrder(result)) {
     return (
-      <ToolBlock toolName="ucp_get_order" status={status.type}>
+      <ToolBlock toolName="get_order" status={status.type}>
         <OrderCard
           orderId={result.id}
           totalCents={result.total_cents}
@@ -234,12 +239,16 @@ function GetOrderUI({ result, status }: ToolRenderProps) {
 }
 
 export const UCP_TOOL_RENDER: Record<string, (props: ToolRenderProps) => React.ReactNode> = {
-  ucp_discover: () => null,
-  ucp_search_products: SearchProductsUI,
-  ucp_get_product: GetProductUI,
-  ucp_create_checkout: CreateCheckoutUI,
-  ucp_update_checkout: UpdateCheckoutUI,
-  ucp_complete_checkout: CompleteCheckoutUI,
-  ucp_cancel_checkout: () => null,
-  ucp_get_order: GetOrderUI,
+  search_products: SearchProductsUI,
+  get_product: GetProductUI,
+  create_checkout: (props) => <CheckoutUI {...props} toolName="create_checkout" />,
+  get_checkout: (props) => <CheckoutUI {...props} toolName="get_checkout" />,
+  update_checkout: UpdateCheckoutUI,
+  complete_checkout: CompleteCheckoutUI,
+  cancel_checkout: () => null,
+  get_order: GetOrderUI,
+  set_fulfillment: (props) => <CheckoutUI {...props} toolName="set_fulfillment" />,
+  select_destination: (props) => <CheckoutUI {...props} toolName="select_destination" />,
+  select_fulfillment_option: (props) => <CheckoutUI {...props} toolName="select_fulfillment_option" />,
+  apply_discount_codes: (props) => <CheckoutUI {...props} toolName="apply_discount_codes" />,
 };

@@ -1,13 +1,17 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-import { UCPClient, UCPError, UCPEscalationError } from '@getmomentumtoday/ucp-client';
+import { dynamicTool, jsonSchema } from 'ai';
+import { UCPClient, type AgentTool } from '@omnixhq/ucp-client';
+import type { ConnectedClient } from '@omnixhq/ucp-client';
 import {
   getCheckoutSessionId,
   setCheckoutSessionId,
   clearCheckoutSessionId,
 } from './session-store';
 
-function createClient(): UCPClient {
+let cachedClient: ConnectedClient | null = null;
+
+async function getClient(): Promise<ConnectedClient> {
+  if (cachedClient) return cachedClient;
+
   const gatewayUrl = process.env['GATEWAY_URL'];
   const agentProfileUrl = process.env['UCP_AGENT_PROFILE'];
 
@@ -15,291 +19,105 @@ function createClient(): UCPClient {
     throw new Error('GATEWAY_URL and UCP_AGENT_PROFILE env vars are required');
   }
 
-  return new UCPClient({ gatewayUrl, agentProfileUrl });
+  cachedClient = await UCPClient.connect({ gatewayUrl, agentProfileUrl });
+  return cachedClient;
+}
+
+function wrapWithSessionTracking(
+  agentTool: AgentTool,
+  sessionId: string,
+): (params: Record<string, unknown>) => Promise<unknown> {
+  const { name, execute } = agentTool;
+
+  if (name === 'create_checkout') {
+    return async (params) => {
+      const existing = getCheckoutSessionId(sessionId);
+      if (existing) {
+        const client = await getClient();
+        const current = await client.checkout!.get(existing);
+        return { ...current, _note: 'Checkout already exists. Use update_checkout to modify it.' };
+      }
+      const result = (await execute(params)) as { id?: string };
+      if (result?.id) {
+        setCheckoutSessionId(sessionId, result.id);
+      }
+      return result;
+    };
+  }
+
+  if (name === 'update_checkout' || name === 'get_checkout') {
+    return async (params) => {
+      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+      if (!id) return { error: 'No active checkout session. Create one first.' };
+      return execute({ ...params, id });
+    };
+  }
+
+  if (name === 'complete_checkout') {
+    return async (params) => {
+      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+      if (!id) return { error: 'No active checkout session. Create one first.' };
+      const result = await execute({ ...params, id });
+      clearCheckoutSessionId(sessionId);
+      return result;
+    };
+  }
+
+  if (name === 'cancel_checkout') {
+    return async (params) => {
+      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+      if (!id) return { error: 'No active checkout session to cancel.' };
+      const result = await execute({ ...params, id });
+      clearCheckoutSessionId(sessionId);
+      return result;
+    };
+  }
+
+  if (name === 'set_fulfillment' || name === 'select_destination' || name === 'select_fulfillment_option') {
+    return async (params) => {
+      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+      if (!id) return { error: 'No active checkout session.' };
+      return execute({ ...params, id });
+    };
+  }
+
+  if (name === 'apply_discount_codes') {
+    return async (params) => {
+      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+      if (!id) return { error: 'No active checkout session.' };
+      return execute({ ...params, id });
+    };
+  }
+
+  return execute;
 }
 
 function formatError(error: unknown): string {
-  if (error instanceof UCPEscalationError) {
-    return `Payment requires browser redirect: ${error.continue_url}`;
-  }
-  if (error instanceof UCPError) {
-    return `UCP error [${error.code}]: ${error.message}`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
+  if (error instanceof Error) return error.message;
   return String(error);
 }
 
-function normalizSearchQuery(query: string): string {
-  return query
-    .trim()
-    .split(/\s+/)
-    .map((word) => {
-      const lower = word.toLowerCase();
-      if (lower.endsWith('ies')) return lower.slice(0, -3) + 'y';
-      if (lower.endsWith('ses') || lower.endsWith('xes') || lower.endsWith('zes'))
-        return lower.slice(0, -2);
-      if (lower.endsWith('s') && !lower.endsWith('ss')) return lower.slice(0, -1);
-      return lower;
-    })
-    .join(' ');
-}
+export async function createUcpTools(sessionId: string) {
+  const client = await getClient();
+  const agentTools = client.getAgentTools();
 
-export function createUcpTools(sessionId: string) {
-  const client = createClient();
+  const tools: Record<string, ReturnType<typeof dynamicTool>> = {};
 
-  return {
-    ucp_discover: tool({
-      description:
-        'Discover the store capabilities, supported payment handlers, and API version. Call this first before any checkout operations.',
-      inputSchema: z.object({}),
-      execute: async () => {
+  for (const agentTool of agentTools) {
+    const wrappedExecute = wrapWithSessionTracking(agentTool, sessionId);
+
+    tools[agentTool.name] = dynamicTool({
+      description: agentTool.description,
+      inputSchema: jsonSchema(agentTool.parameters),
+      execute: async (params) => {
         try {
-          return await client.discover();
+          return await wrappedExecute(params as Record<string, unknown>);
         } catch (error) {
           return { error: formatError(error) };
         }
       },
-    }),
+    });
+  }
 
-    ucp_search_products: tool({
-      description:
-        'Search for products by keyword. Use singular forms (e.g., "bag" not "bags"). Returns matching products with prices, stock, images, and descriptions.',
-      inputSchema: z.object({
-        query: z
-          .string()
-          .describe('Search keyword in SINGULAR form (e.g., "bag", "shoe", "jacket")'),
-        max_price_cents: z.number().int().optional().describe('Maximum price in cents'),
-        min_price_cents: z.number().int().optional().describe('Minimum price in cents'),
-        in_stock: z.boolean().optional().describe('Filter to only in-stock items'),
-        category: z.string().optional().describe('Product category filter'),
-        limit: z
-          .number()
-          .int()
-          .optional()
-          .describe('Max results to return (default 20, recommend 5)'),
-      }),
-      execute: async ({ query, ...filters }) => {
-        try {
-          const normalizedQuery = normalizSearchQuery(query);
-          const results = await client.searchProducts(normalizedQuery, filters);
-          if (results.length === 0 && normalizedQuery !== query) {
-            return await client.searchProducts(query, filters);
-          }
-          return results;
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-
-    ucp_get_product: tool({
-      description: 'Get detailed product information by ID, including variants and stock.',
-      inputSchema: z.object({
-        product_id: z.string().describe('The product ID'),
-      }),
-      execute: async ({ product_id }) => {
-        try {
-          return await client.getProduct(product_id);
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-
-    ucp_create_checkout: tool({
-      description:
-        'Create a new checkout session (cart) with line items. Returns the checkout session with totals. Only call once per order — if a checkout already exists, use ucp_update_checkout instead.',
-      inputSchema: z.object({
-        line_items: z
-          .array(
-            z.object({
-              item: z.object({ id: z.string().describe('Product ID') }),
-              quantity: z.number().int().min(1).describe('Quantity'),
-            }),
-          )
-          .min(1)
-          .describe('Items to add to cart'),
-        currency: z.string().length(3).optional().describe('Currency code (e.g., "USD")'),
-        buyer: z
-          .object({
-            first_name: z.string().optional(),
-            last_name: z.string().optional(),
-            email: z.string().email().optional(),
-            phone_number: z.string().optional(),
-          })
-          .optional()
-          .describe('Buyer information'),
-      }),
-      execute: async (payload) => {
-        try {
-          const existing = getCheckoutSessionId(sessionId);
-          if (existing) {
-            const current = await client.getCheckout(existing);
-            return {
-              ...current,
-              _note: 'Checkout already exists. Use ucp_update_checkout to modify it.',
-            };
-          }
-          const session = await client.createCheckout(payload);
-          setCheckoutSessionId(sessionId, session.id);
-          return session;
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-
-    ucp_update_checkout: tool({
-      description:
-        'Update an existing checkout session — set buyer info, shipping address, or fulfillment method.',
-      inputSchema: z.object({
-        checkout_id: z
-          .string()
-          .optional()
-          .describe('Checkout session ID (uses current session if omitted)'),
-        buyer: z
-          .object({
-            first_name: z.string().optional(),
-            last_name: z.string().optional(),
-            email: z.string().email().optional(),
-            phone_number: z.string().optional(),
-          })
-          .optional()
-          .describe('Updated buyer info'),
-        fulfillment: z
-          .object({
-            destinations: z
-              .array(
-                z.object({
-                  id: z.string(),
-                  address: z.object({
-                    street_address: z.string().optional(),
-                    address_locality: z.string().optional(),
-                    address_region: z.string().optional(),
-                    postal_code: z.string().optional(),
-                    address_country: z.string().optional(),
-                  }),
-                }),
-              )
-              .optional(),
-            methods: z
-              .array(
-                z.object({
-                  id: z.string(),
-                  type: z.string(),
-                  selected_destination_id: z.string().optional(),
-                  groups: z
-                    .array(
-                      z.object({
-                        id: z.string(),
-                        selected_option_id: z.string().optional(),
-                      }),
-                    )
-                    .optional(),
-                }),
-              )
-              .optional(),
-          })
-          .optional()
-          .describe('Fulfillment configuration — shipping address and method'),
-        discounts: z
-          .object({
-            codes: z.array(z.string()).optional(),
-          })
-          .optional()
-          .describe('Discount codes to apply'),
-      }),
-      execute: async ({ checkout_id, ...patch }) => {
-        try {
-          const id = checkout_id ?? getCheckoutSessionId(sessionId);
-          if (!id) {
-            return {
-              error: 'No active checkout session. Create one first with ucp_create_checkout.',
-            };
-          }
-          const session = await client.updateCheckout(id, patch);
-          return session;
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-
-    ucp_complete_checkout: tool({
-      description:
-        'Complete a checkout session by submitting payment. Use a payment handler ID from ucp_discover.',
-      inputSchema: z.object({
-        checkout_id: z
-          .string()
-          .optional()
-          .describe('Checkout session ID (uses current session if omitted)'),
-        payment: z.object({
-          instruments: z
-            .array(
-              z.object({
-                id: z.string().describe('Instrument ID (can be "default")'),
-                handler_id: z.string().describe('Payment handler ID from discover'),
-                type: z.string().describe('Payment type (e.g., "check_money_order")'),
-                selected: z.boolean().optional().default(true),
-              }),
-            )
-            .min(1),
-        }),
-      }),
-      execute: async ({ checkout_id, payment }) => {
-        try {
-          const id = checkout_id ?? getCheckoutSessionId(sessionId);
-          if (!id) {
-            return {
-              error: 'No active checkout session. Create one first with ucp_create_checkout.',
-            };
-          }
-          const session = await client.completeCheckout(id, { payment });
-          clearCheckoutSessionId(sessionId);
-          return session;
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-
-    ucp_cancel_checkout: tool({
-      description: 'Cancel an active checkout session.',
-      inputSchema: z.object({
-        checkout_id: z
-          .string()
-          .optional()
-          .describe('Checkout session ID (uses current session if omitted)'),
-      }),
-      execute: async ({ checkout_id }) => {
-        try {
-          const id = checkout_id ?? getCheckoutSessionId(sessionId);
-          if (!id) {
-            return { error: 'No active checkout session to cancel.' };
-          }
-          const session = await client.cancelCheckout(id);
-          clearCheckoutSessionId(sessionId);
-          return session;
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-
-    ucp_get_order: tool({
-      description: 'Get order status and details by order ID.',
-      inputSchema: z.object({
-        order_id: z.string().describe('The order ID returned after completing checkout'),
-      }),
-      execute: async ({ order_id }) => {
-        try {
-          return await client.getOrder(order_id);
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
-    }),
-  };
+  return tools;
 }
