@@ -23,13 +23,25 @@ import styles from './page.module.css';
 
 const TOOL_NAMES = Object.keys(UCP_TOOL_RENDER);
 
+function parseResult(result: unknown): unknown {
+  if (typeof result === 'string') {
+    try {
+      return JSON.parse(result);
+    } catch {
+      return result;
+    }
+  }
+  return result;
+}
+
 const toolUIs = TOOL_NAMES.filter((name) => UCP_TOOL_RENDER[name] !== undefined).map((toolName) => {
   const renderFn = UCP_TOOL_RENDER[toolName]!;
   return makeAssistantToolUI({
     toolName,
     render: (props) => {
       const status = { type: props.status?.type ?? 'complete' };
-      return <>{renderFn({ args: props.args ?? {}, result: props.result, status })}</>;
+      const result = parseResult(props.result);
+      return <>{renderFn({ args: props.args ?? {}, result, status })}</>;
     },
   });
 });
