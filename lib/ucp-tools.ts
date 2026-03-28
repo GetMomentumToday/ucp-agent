@@ -73,7 +73,11 @@ function wrapWithSessionTracking(
     };
   }
 
-  if (name === 'set_fulfillment' || name === 'select_destination' || name === 'select_fulfillment_option') {
+  if (
+    name === 'set_fulfillment' ||
+    name === 'select_destination' ||
+    name === 'select_fulfillment_option'
+  ) {
     return async (params) => {
       const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
       if (!id) return { error: 'No active checkout session.' };

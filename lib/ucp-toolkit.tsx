@@ -249,6 +249,8 @@ export const UCP_TOOL_RENDER: Record<string, (props: ToolRenderProps) => React.R
   get_order: GetOrderUI,
   set_fulfillment: (props) => <CheckoutUI {...props} toolName="set_fulfillment" />,
   select_destination: (props) => <CheckoutUI {...props} toolName="select_destination" />,
-  select_fulfillment_option: (props) => <CheckoutUI {...props} toolName="select_fulfillment_option" />,
+  select_fulfillment_option: (props) => (
+    <CheckoutUI {...props} toolName="select_fulfillment_option" />
+  ),
   apply_discount_codes: (props) => <CheckoutUI {...props} toolName="apply_discount_codes" />,
 };
