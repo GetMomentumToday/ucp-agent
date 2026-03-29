@@ -1,6 +1,7 @@
 import { dynamicTool, jsonSchema } from 'ai';
-import { UCPClient, type AgentTool } from '@omnixhq/ucp-client';
-import type { ConnectedClient } from '@omnixhq/ucp-client';
+import { UCPClient } from '@omnixhq/ucp-client';
+import { toVercelAITools } from '@omnixhq/ucp-client/vercel-ai';
+import type { ConnectedClient, AgentTool } from '@omnixhq/ucp-client';
 import {
   getCheckoutSessionId,
   setCheckoutSessionId,
@@ -23,105 +24,78 @@ async function getClient(): Promise<ConnectedClient> {
   return cachedClient;
 }
 
-function wrapWithSessionTracking(
-  agentTool: AgentTool,
-  sessionId: string,
-): (params: Record<string, unknown>) => Promise<unknown> {
+const CHECKOUT_TOOLS = new Set([
+  'update_checkout',
+  'get_checkout',
+  'set_fulfillment',
+  'select_destination',
+  'select_fulfillment_option',
+  'apply_discount_codes',
+]);
+
+function withSessionTracking(agentTool: AgentTool, sessionId: string): AgentTool {
   const { name, execute } = agentTool;
 
   if (name === 'create_checkout') {
-    return async (params) => {
-      const existing = getCheckoutSessionId(sessionId);
-      if (existing) {
-        const client = await getClient();
-        const current = await client.checkout!.get(existing);
-        return { ...current, _note: 'Checkout already exists. Use update_checkout to modify it.' };
-      }
-      const result = (await execute(params)) as { id?: string };
-      if (result?.id) {
-        setCheckoutSessionId(sessionId, result.id);
-      }
-      return result;
+    return {
+      ...agentTool,
+      execute: async (params) => {
+        const existing = getCheckoutSessionId(sessionId);
+        if (existing) {
+          const client = await getClient();
+          const current = await client.checkout!.get(existing);
+          return {
+            ...current,
+            _note: 'Checkout already exists. Use update_checkout to modify it.',
+          };
+        }
+        const result = (await execute(params)) as { id?: string };
+        if (result?.id) setCheckoutSessionId(sessionId, result.id);
+        return result;
+      },
     };
   }
 
-  if (name === 'update_checkout' || name === 'get_checkout') {
-    return async (params) => {
-      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
-      if (!id) return { error: 'No active checkout session. Create one first.' };
-      return execute({ ...params, id });
+  if (name === 'complete_checkout' || name === 'cancel_checkout') {
+    return {
+      ...agentTool,
+      execute: async (params) => {
+        const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+        if (!id) return { error: 'No active checkout session. Create one first.' };
+        const result = await execute({ ...params, id });
+        clearCheckoutSessionId(sessionId);
+        return result;
+      },
     };
   }
 
-  if (name === 'complete_checkout') {
-    return async (params) => {
-      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
-      if (!id) return { error: 'No active checkout session. Create one first.' };
-      const result = await execute({ ...params, id });
-      clearCheckoutSessionId(sessionId);
-      return result;
+  if (CHECKOUT_TOOLS.has(name)) {
+    return {
+      ...agentTool,
+      execute: async (params) => {
+        const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
+        if (!id) return { error: 'No active checkout session.' };
+        return execute({ ...params, id });
+      },
     };
   }
 
-  if (name === 'cancel_checkout') {
-    return async (params) => {
-      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
-      if (!id) return { error: 'No active checkout session to cancel.' };
-      const result = await execute({ ...params, id });
-      clearCheckoutSessionId(sessionId);
-      return result;
-    };
-  }
-
-  if (
-    name === 'set_fulfillment' ||
-    name === 'select_destination' ||
-    name === 'select_fulfillment_option'
-  ) {
-    return async (params) => {
-      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
-      if (!id) return { error: 'No active checkout session.' };
-      return execute({ ...params, id });
-    };
-  }
-
-  if (name === 'apply_discount_codes') {
-    return async (params) => {
-      const id = (params['id'] as string) || getCheckoutSessionId(sessionId);
-      if (!id) return { error: 'No active checkout session.' };
-      return execute({ ...params, id });
-    };
-  }
-
-  return execute;
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
+  return agentTool;
 }
 
 export async function createUcpTools(sessionId: string) {
   const client = await getClient();
-  const agentTools = client.getAgentTools();
+  const tracked = client.getAgentTools().map((t) => withSessionTracking(t, sessionId));
+  const adapterTools = toVercelAITools(tracked, { catchErrors: true });
 
+  // Bridge: wrap adapter's JsonSchema with AI SDK's jsonSchema() for type compatibility
   const tools: Record<string, ReturnType<typeof dynamicTool>> = {};
-
-  for (const agentTool of agentTools) {
-    const wrappedExecute = wrapWithSessionTracking(agentTool, sessionId);
-
-    tools[agentTool.name] = dynamicTool({
-      description: agentTool.description,
-      inputSchema: jsonSchema(agentTool.parameters),
-      execute: async (params) => {
-        try {
-          return await wrappedExecute(params as Record<string, unknown>);
-        } catch (error) {
-          return { error: formatError(error) };
-        }
-      },
+  for (const [name, def] of Object.entries(adapterTools)) {
+    tools[name] = dynamicTool({
+      description: def.description,
+      inputSchema: jsonSchema(def.inputSchema),
+      execute: async (params) => def.execute(params as Record<string, unknown>),
     });
   }
-
   return tools;
 }
