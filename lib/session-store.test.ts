@@ -1,21 +1,42 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import {
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('./db/connection', async () => {
+  const { createTestDb } = await vi.importActual<typeof import('./db/connection')>('./db/connection');
+  const db = createTestDb();
+  return { getDb: () => db, createTestDb };
+});
+
+const { getDb } = await import('./db/connection');
+const { createThread } = await import('./db/thread-repository');
+const {
   getCheckoutSessionId,
   setCheckoutSessionId,
   clearCheckoutSessionId,
   getCartSessionId,
   setCartSessionId,
   clearCartSessionId,
-} from './session-store';
+} = await import('./session-store');
+
+function ensureThread(id: string): void {
+  try {
+    createThread(getDb(), { id, userId: 'test-user' });
+  } catch {
+    // already exists
+  }
+}
 
 describe('session-store', () => {
   beforeEach(() => {
+    ensureThread('test-session');
+    ensureThread('session-a');
+    ensureThread('session-b');
     clearCheckoutSessionId('test-session');
     clearCartSessionId('test-session');
   });
 
   describe('checkout sessions', () => {
     it('returns undefined for unknown session', () => {
+      ensureThread('nonexistent');
       expect(getCheckoutSessionId('nonexistent')).toBeUndefined();
     });
 
@@ -46,6 +67,7 @@ describe('session-store', () => {
 
   describe('cart sessions', () => {
     it('returns undefined for unknown session', () => {
+      ensureThread('nonexistent');
       expect(getCartSessionId('nonexistent')).toBeUndefined();
     });
 

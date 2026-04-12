@@ -12,8 +12,6 @@ export default defineConfig({
       exclude: [
         '**/*.test.ts',
         '**/*.d.ts',
-        'lib/localStorage-thread-list-adapter.ts',
-        'lib/conversation-storage.ts',
       ],
       thresholds: {
         statements: 80,

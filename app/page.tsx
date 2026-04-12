@@ -17,7 +17,7 @@ import { useAuiState } from '@assistant-ui/store';
 import { useChat } from '@ai-sdk/react';
 import { useTheme } from 'next-themes';
 import { UCP_TOOL_RENDER } from '@/lib/ucp-toolkit';
-import { LocalStorageThreadListAdapter } from '@/lib/localStorage-thread-list-adapter';
+import { RemoteThreadListAdapter } from '@/lib/remote-thread-list-adapter';
 import { Sidebar } from './components/Sidebar';
 import styles from './page.module.css';
 
@@ -318,7 +318,7 @@ function useChatThreadRuntime() {
 }
 
 export default function ChatPage() {
-  const adapter = useMemo(() => new LocalStorageThreadListAdapter(), []);
+  const adapter = useMemo(() => new RemoteThreadListAdapter(), []);
 
   const runtime = useRemoteThreadListRuntime({
     runtimeHook: useChatThreadRuntime,

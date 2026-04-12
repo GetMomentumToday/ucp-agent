@@ -1,26 +1,37 @@
-const checkoutSessions = new Map<string, string>();
-const cartSessions = new Map<string, string>();
+import { getDb } from './db/connection';
+import {
+  getSession,
+  upsertSession,
+} from './db/session-repository';
 
 export function getCheckoutSessionId(sessionId: string): string | undefined {
-  return checkoutSessions.get(sessionId);
+  const db = getDb();
+  const session = getSession(db, sessionId);
+  return session?.checkoutSessionId ?? undefined;
 }
 
 export function setCheckoutSessionId(sessionId: string, checkoutSessionId: string): void {
-  checkoutSessions.set(sessionId, checkoutSessionId);
+  const db = getDb();
+  upsertSession(db, sessionId, { checkoutSessionId });
 }
 
 export function clearCheckoutSessionId(sessionId: string): void {
-  checkoutSessions.delete(sessionId);
+  const db = getDb();
+  upsertSession(db, sessionId, { checkoutSessionId: null });
 }
 
 export function getCartSessionId(sessionId: string): string | undefined {
-  return cartSessions.get(sessionId);
+  const db = getDb();
+  const session = getSession(db, sessionId);
+  return session?.cartId ?? undefined;
 }
 
 export function setCartSessionId(sessionId: string, cartId: string): void {
-  cartSessions.set(sessionId, cartId);
+  const db = getDb();
+  upsertSession(db, sessionId, { cartId });
 }
 
 export function clearCartSessionId(sessionId: string): void {
-  cartSessions.delete(sessionId);
+  const db = getDb();
+  upsertSession(db, sessionId, { cartId: null });
 }

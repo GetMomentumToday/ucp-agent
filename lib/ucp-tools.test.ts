@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AgentTool } from '@omnixhq/ucp-client';
-import { withCheckoutTracking, withCartTracking } from './ucp-tools';
-import {
-  setCheckoutSessionId,
-  getCheckoutSessionId,
-  clearCheckoutSessionId,
-  setCartSessionId,
-  getCartSessionId,
-  clearCartSessionId,
-} from './session-store';
+
+vi.mock('./db/connection', async () => {
+  const { createTestDb } = await vi.importActual<typeof import('./db/connection')>('./db/connection');
+  const db = createTestDb();
+  return { getDb: () => db, createTestDb };
+});
 
 const mockCheckoutGet = vi.fn(async (id: string) => ({ id, status: 'incomplete' }));
 const mockCartGet = vi.fn(async (id: string) => ({ id, status: 'active' }));
@@ -27,6 +24,16 @@ vi.mock('@omnixhq/ucp-client/vercel-ai', () => ({
   toVercelAITools: vi.fn((tools: AgentTool[]) => tools),
 }));
 
+const { withCheckoutTracking, withCartTracking } = await import('./ucp-tools');
+const {
+  setCheckoutSessionId,
+  getCheckoutSessionId,
+  clearCheckoutSessionId,
+  setCartSessionId,
+  getCartSessionId,
+  clearCartSessionId,
+} = await import('./session-store');
+
 function makeTool(name: string, executeFn?: AgentTool['execute']): AgentTool {
   return {
     name,
@@ -38,9 +45,13 @@ function makeTool(name: string, executeFn?: AgentTool['execute']): AgentTool {
 
 const SESSION = 'test-session';
 
+const { getDb } = await import('./db/connection');
+const { createThread } = await import('./db/thread-repository');
+
 beforeEach(() => {
   vi.stubEnv('GATEWAY_URL', 'http://localhost:3000');
   vi.stubEnv('UCP_AGENT_PROFILE', 'http://localhost:3001/agent-profile.json');
+  try { createThread(getDb(), { id: SESSION, userId: 'test-user' }); } catch { /* exists */ }
   clearCheckoutSessionId(SESSION);
   clearCartSessionId(SESSION);
   mockCheckoutGet.mockClear();
