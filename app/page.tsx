@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DefaultChatTransport } from 'ai';
 import {
   AssistantRuntimeProvider,
@@ -13,7 +13,7 @@ import {
   useRemoteThreadListRuntime,
 } from '@assistant-ui/react';
 import { useAISDKRuntime } from '@assistant-ui/react-ai-sdk';
-import { useAuiState } from '@assistant-ui/store';
+import { useAui, useAuiState } from '@assistant-ui/store';
 import { useChat } from '@ai-sdk/react';
 import { useTheme } from 'next-themes';
 import { UCP_TOOL_RENDER } from '@/lib/ucp-toolkit';
@@ -305,6 +305,30 @@ function MyComposer() {
   );
 }
 
+function ResumeLastThread() {
+  const aui = useAui();
+  const threadIds = useAuiState((s) => s.threads.threadIds);
+  const isLoading = useAuiState((s) => s.threads.isLoading);
+  const resumed = useRef(false);
+  const wasLoading = useRef(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      wasLoading.current = true;
+      return;
+    }
+    if (!wasLoading.current || resumed.current) return;
+    resumed.current = true;
+
+    const firstThreadId = threadIds[0];
+    if (firstThreadId) {
+      aui.threads().switchToThread(firstThreadId);
+    }
+  }, [isLoading, threadIds, aui]);
+
+  return null;
+}
+
 function useChatThreadRuntime() {
   const id = useAuiState((s) => s.threadListItem.id);
 
@@ -328,6 +352,7 @@ export default function ChatPage() {
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
+      <ResumeLastThread />
       {toolUIs.map((ToolUI, i) => (
         <ToolUI key={i} />
       ))}
