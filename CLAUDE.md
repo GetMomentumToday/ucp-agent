@@ -28,7 +28,7 @@ On page load, `GET /api/threads` prefetches the latest thread's messages in the 
 - Vercel AI SDK v6 (`ai` + `@ai-sdk/google` + `@ai-sdk/react`)
 - `@assistant-ui/react` + `@assistant-ui/react-ai-sdk` — headless chat UI with thread management
 - `gemini-2.5-flash` model, `stopWhen: stepCountIs(15)`
-- `@omnixhq/ucp-client` v3.0.0 linked from `../ucp-client` (uses `@omnixhq/ucp-js-sdk@2.0.0`)
+- `@omnixhq/ucp-client` v3.0.0 from GitHub Packages registry
 - Drizzle ORM + `better-sqlite3` for conversation persistence (WAL mode)
 
 ## Commands
