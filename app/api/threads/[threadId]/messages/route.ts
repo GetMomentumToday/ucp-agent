@@ -1,5 +1,7 @@
 import { getDb } from '@/lib/db/connection';
 import { loadMessages, appendMessage } from '@/lib/db/message-repository';
+import { createThread } from '@/lib/db/thread-repository';
+import { getUserId } from '@/lib/user-id';
 
 type RouteContext = { params: Promise<{ threadId: string }> };
 
@@ -25,6 +27,7 @@ export async function GET(_req: Request, ctx: RouteContext): Promise<Response> {
 
 export async function POST(req: Request, ctx: RouteContext): Promise<Response> {
   try {
+    const userId = await getUserId();
     const { threadId } = await ctx.params;
     const body = (await req.json()) as {
       id?: string;
@@ -41,6 +44,8 @@ export async function POST(req: Request, ctx: RouteContext): Promise<Response> {
     }
 
     const db = getDb();
+    createThread(db, { id: threadId, userId });
+
     appendMessage(db, threadId, {
       id: body.id,
       parentId: body.parent_id ?? null,

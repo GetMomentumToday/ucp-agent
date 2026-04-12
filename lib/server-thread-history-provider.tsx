@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from 'react';
 import { RuntimeAdapterProvider } from '@assistant-ui/react';
-import { useAuiState } from '@assistant-ui/store';
+import { useAui } from '@assistant-ui/store';
 import type {
   ThreadHistoryAdapter,
   ExportedMessageRepository,
@@ -15,11 +15,14 @@ import type {
 } from '@assistant-ui/core';
 
 function createFormattedAdapter<TMessage, TStorageFormat extends Record<string, unknown>>(
-  remoteId: string,
+  aui: ReturnType<typeof useAui>,
   formatAdapter: MessageFormatAdapter<TMessage, TStorageFormat>,
 ): GenericThreadHistoryAdapter<TMessage> {
   return {
     async load(): Promise<MessageFormatRepository<TMessage>> {
+      const remoteId = aui.threadListItem().getState().remoteId;
+      if (!remoteId) return { messages: [] };
+
       const res = await fetch(`/api/threads/${remoteId}/messages`);
       if (!res.ok) return { messages: [] };
 
@@ -35,6 +38,8 @@ function createFormattedAdapter<TMessage, TStorageFormat extends Record<string, 
     },
 
     async append(item: MessageFormatItem<TMessage>): Promise<void> {
+      const { remoteId } = await aui.threadListItem().initialize();
+
       const encoded = formatAdapter.encode(item);
       const id = formatAdapter.getId(item.message);
 
@@ -52,7 +57,7 @@ function createFormattedAdapter<TMessage, TStorageFormat extends Record<string, 
   };
 }
 
-function createHistoryAdapter(remoteId: string): ThreadHistoryAdapter {
+function createHistoryAdapter(aui: ReturnType<typeof useAui>): ThreadHistoryAdapter {
   return {
     async load(): Promise<ExportedMessageRepository & { unstable_resume?: boolean }> {
       return { messages: [] };
@@ -63,7 +68,7 @@ function createHistoryAdapter(remoteId: string): ThreadHistoryAdapter {
     withFormat<TMessage, TStorageFormat extends Record<string, unknown>>(
       formatAdapter: MessageFormatAdapter<TMessage, TStorageFormat>,
     ): GenericThreadHistoryAdapter<TMessage> {
-      return createFormattedAdapter(remoteId, formatAdapter);
+      return createFormattedAdapter(aui, formatAdapter);
     },
   };
 }
@@ -73,14 +78,9 @@ export function ServerThreadHistoryProvider({
 }: {
   readonly children: ReactNode;
 }) {
-  const remoteId = useAuiState((s) => s.threadListItem.remoteId);
+  const aui = useAui();
+  const history = useMemo(() => createHistoryAdapter(aui), [aui]);
+  const adapters = useMemo(() => ({ history }), [history]);
 
-  const history = useMemo((): ThreadHistoryAdapter | undefined => {
-    if (!remoteId) return undefined;
-    return createHistoryAdapter(remoteId);
-  }, [remoteId]);
-
-  if (!history) return <>{children}</>;
-
-  return <RuntimeAdapterProvider adapters={{ history }}>{children}</RuntimeAdapterProvider>;
+  return <RuntimeAdapterProvider adapters={adapters}>{children}</RuntimeAdapterProvider>;
 }
