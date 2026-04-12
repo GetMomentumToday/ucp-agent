@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@getmomentumtoday/ucp-client'],
+  serverExternalPackages: ['@omnixhq/ucp-client', 'better-sqlite3'],
 };
 
 export default nextConfig;

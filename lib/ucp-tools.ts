@@ -1,4 +1,3 @@
-import { dynamicTool, jsonSchema } from 'ai';
 import { UCPClient } from '@omnixhq/ucp-client';
 import { toVercelAITools } from '@omnixhq/ucp-client/vercel-ai';
 import type { ConnectedClient, AgentTool } from '@omnixhq/ucp-client';
@@ -6,6 +5,9 @@ import {
   getCheckoutSessionId,
   setCheckoutSessionId,
   clearCheckoutSessionId,
+  getCartSessionId,
+  setCartSessionId,
+  clearCartSessionId,
 } from './session-store';
 
 let cachedClient: ConnectedClient | null = null;
@@ -33,7 +35,9 @@ const CHECKOUT_TOOLS = new Set([
   'apply_discount_codes',
 ]);
 
-function withSessionTracking(agentTool: AgentTool, sessionId: string): AgentTool {
+const CART_TOOLS = new Set(['get_cart', 'update_cart']);
+
+export function withCheckoutTracking(agentTool: AgentTool, sessionId: string): AgentTool {
   const { name, execute } = agentTool;
 
   if (name === 'create_checkout') {
@@ -83,19 +87,64 @@ function withSessionTracking(agentTool: AgentTool, sessionId: string): AgentTool
   return agentTool;
 }
 
+export function withCartTracking(agentTool: AgentTool, sessionId: string): AgentTool {
+  const { name, execute } = agentTool;
+
+  if (name === 'create_cart') {
+    return {
+      ...agentTool,
+      execute: async (params) => {
+        const existing = getCartSessionId(sessionId);
+        if (existing) {
+          const client = await getClient();
+          const current = await client.cart!.get(existing);
+          return {
+            ...current,
+            _note: 'Cart already exists. Use update_cart to modify it.',
+          };
+        }
+        const result = (await execute(params)) as { id?: string };
+        if (result?.id) setCartSessionId(sessionId, result.id);
+        return result;
+      },
+    };
+  }
+
+  if (name === 'cancel_cart') {
+    return {
+      ...agentTool,
+      execute: async (params) => {
+        const id = (params['id'] as string) || getCartSessionId(sessionId);
+        if (!id) return { error: 'No active cart. Create one first.' };
+        const result = await execute({ ...params, id });
+        clearCartSessionId(sessionId);
+        return result;
+      },
+    };
+  }
+
+  if (CART_TOOLS.has(name)) {
+    return {
+      ...agentTool,
+      execute: async (params) => {
+        const id = (params['id'] as string) || getCartSessionId(sessionId);
+        if (!id) return { error: 'No active cart.' };
+        return execute({ ...params, id });
+      },
+    };
+  }
+
+  return agentTool;
+}
+
+function withSessionTracking(agentTool: AgentTool, sessionId: string): AgentTool {
+  const tracked = withCheckoutTracking(agentTool, sessionId);
+  if (tracked !== agentTool) return tracked;
+  return withCartTracking(agentTool, sessionId);
+}
+
 export async function createUcpTools(sessionId: string) {
   const client = await getClient();
   const tracked = client.getAgentTools().map((t) => withSessionTracking(t, sessionId));
-  const adapterTools = toVercelAITools(tracked, { catchErrors: true });
-
-  // Bridge: wrap adapter's JsonSchema with AI SDK's jsonSchema() for type compatibility
-  const tools: Record<string, ReturnType<typeof dynamicTool>> = {};
-  for (const [name, def] of Object.entries(adapterTools)) {
-    tools[name] = dynamicTool({
-      description: def.description,
-      inputSchema: jsonSchema(def.inputSchema),
-      execute: async (params) => def.execute(params as Record<string, unknown>),
-    });
-  }
-  return tools;
+  return toVercelAITools(tracked, { catchErrors: true });
 }

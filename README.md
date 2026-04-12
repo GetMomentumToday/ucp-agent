@@ -2,37 +2,43 @@
 
 AI shopping assistant that connects Claude to any e-commerce store via the [Universal Commerce Protocol](https://github.com/anthropics/ucp).
 
-Built with Next.js App Router, Vercel AI SDK, and `@getmomentumtoday/ucp-client`.
+Built with Next.js App Router, Vercel AI SDK, and `@omnixhq/ucp-client`.
 
 ## What It Does
 
 - **Product discovery** — search and browse products from any UCP-connected store
-- **Checkout flow** — create cart, set shipping, apply discounts, complete purchase
+- **Cart management** — create cart, add/remove items
+- **Checkout flow** — create checkout, set shipping, apply discounts, complete purchase
 - **Order tracking** — check order status after purchase
+- **Conversation persistence** — messages saved to SQLite, survive page refresh
+- **Multi-user isolation** — each user sees only their own conversations
 - **Streaming responses** — real-time SSE streaming with tool call visibility
 
 ## Architecture
 
 ```
-Browser ──► POST /api/chat ──► Claude (claude-sonnet-4-6)
-                                    │
-                                    ├─► ucp_discover
-                                    ├─► ucp_search_products
-                                    ├─► ucp_get_product
-                                    ├─► ucp_create_checkout
-                                    ├─► ucp_update_checkout
-                                    ├─► ucp_complete_checkout
-                                    ├─► ucp_cancel_checkout
-                                    └─► ucp_get_order
-                                            │
-                                            ▼
-                                    UCP Gateway (localhost:3000)
-                                            │
-                                            ▼
-                                    Magento / Shopware / etc.
+Browser (@assistant-ui/react)
+    │
+    ├─► POST /api/chat ──► Gemini / Claude
+    │                           │
+    │                           ├─► search_products, get_product
+    │                           ├─► create_cart, update_cart
+    │                           ├─► create_checkout, update_checkout
+    │                           ├─► complete_checkout, cancel_checkout
+    │                           └─► get_order
+    │                                   │
+    │                                   ▼
+    │                           UCP Gateway (localhost:3000)
+    │                                   │
+    │                                   ▼
+    │                           Magento / Shopware / etc.
+    │
+    ├─► GET  /api/threads ──► SQLite (threads + messages)
+    ├─► POST /api/threads/[id]/messages
+    └─► PATCH /api/threads/[id]
 ```
 
-Claude calls UCP tools in a loop (up to 15 steps per turn) to fulfill user requests — from "find me running shoes" to a completed order.
+The LLM calls UCP tools in a loop (up to 15 steps per turn) to fulfill user requests. Conversations are persisted to SQLite via Drizzle ORM.
 
 ## Quick Start
 
@@ -40,17 +46,13 @@ Claude calls UCP tools in a loop (up to 15 steps per turn) to fulfill user reque
 
 - Node.js >= 22
 - [UCP Gateway](https://github.com/GetMomentumToday/ucp-middleware) running on port 3000
-- [UCP Client](https://github.com/GetMomentumToday/ucp-client) cloned as sibling directory and built
 
 ### Setup
 
 ```bash
 # Clone
-git clone git@github.com:GetMomentumToday/ucp-agent.git
-cd ucp-agent
-
-# Build ucp-client (sibling dependency)
-cd ../ucp-client && npm ci && npm run build && cd ../ucp-agent
+git clone git@github.com:OmnixHQ/omnix-agent.git
+cd omnix-agent
 
 # Install
 npm install
@@ -63,7 +65,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) and start chatting.
+Open [http://localhost:4173](http://localhost:4173) and start chatting. Conversations are saved automatically to `data/ucp-agent.db`.
 
 ### AI Model
 
@@ -120,14 +122,30 @@ UCP agent identity — served to the gateway with every request.
 
 ```
 app/
-├── api/chat/route.ts             POST /api/chat — streamText + 8 UCP tools
-├── agent-profile.json/route.ts   GET /agent-profile.json
-├── layout.tsx                    Root layout
-└── page.tsx                      Test UI (useChat)
+├── api/
+│   ├── chat/route.ts                      POST /api/chat — streamText + UCP tools
+│   └── threads/
+│       ├── route.ts                       GET/POST /api/threads
+│       └── [threadId]/
+│           ├── route.ts                   GET/PATCH/DELETE /api/threads/:id
+│           └── messages/route.ts          GET/POST /api/threads/:id/messages
+├── agent-profile.json/route.ts            GET /agent-profile.json
+├── components/Sidebar.tsx                 Thread list sidebar
+├── layout.tsx                             Root layout
+└── page.tsx                               Chat UI (assistant-ui + Vercel AI SDK)
 lib/
-├── ucp-tools.ts                  Tool definitions wrapping UCPClient
-├── system-prompt.ts              Claude system prompt
-└── session-store.ts              In-memory sessionId → checkoutSessionId map
+├── db/
+│   ├── schema.ts                          Drizzle ORM schema (threads, messages, sessions)
+│   ├── connection.ts                      SQLite singleton + auto-migration
+│   ├── thread-repository.ts               Thread CRUD (userId-scoped)
+│   ├── message-repository.ts              Message load/append
+│   └── session-repository.ts              Checkout/cart session state
+├── ucp-tools.ts                           UCP tool definitions with session tracking
+├── system-prompt.ts                       LLM system prompt
+├── session-store.ts                       DB-backed session store
+├── remote-thread-list-adapter.ts          HTTP-backed thread list adapter
+├── server-thread-history-provider.tsx     Message persistence via ThreadHistoryAdapter
+└── user-id.ts                             Cookie-based anonymous user ID
 ```
 
 ## Cost & Optimization
@@ -178,9 +196,11 @@ Run tests locally: `node scripts/run-scenario.mjs`
 ## Scripts
 
 ```bash
-npm run dev            # Dev server (port 3001)
+npm run dev            # Dev server (port 4173)
 npm run build          # Production build
 npm run typecheck      # TypeScript checks
+npm run test           # Unit tests (vitest)
+npm run verify         # typecheck + tests + build
 npm run lint           # ESLint
 npm run format         # Prettier
 npm run check:comments # No descriptive comments
