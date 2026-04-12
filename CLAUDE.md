@@ -12,6 +12,7 @@ Next.js App Router project. AI shopping assistant using Vercel AI SDK + Gemini +
 ### Conversation Persistence
 
 SQLite database (`data/ucp-agent.db`) via Drizzle ORM with three tables:
+
 - `threads` — conversation metadata (id, userId, status, title)
 - `messages` — message history per thread (ai-sdk/v6 format)
 - `sessions` — checkout/cart session state per thread

@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AgentTool } from '@omnixhq/ucp-client';
 
 vi.mock('./db/connection', async () => {
-  const { createTestDb } = await vi.importActual<typeof import('./db/connection')>('./db/connection');
+  const { createTestDb } =
+    await vi.importActual<typeof import('./db/connection')>('./db/connection');
   const db = createTestDb();
   return { getDb: () => db, createTestDb };
 });
@@ -51,7 +52,11 @@ const { createThread } = await import('./db/thread-repository');
 beforeEach(() => {
   vi.stubEnv('GATEWAY_URL', 'http://localhost:3000');
   vi.stubEnv('UCP_AGENT_PROFILE', 'http://localhost:3001/agent-profile.json');
-  try { createThread(getDb(), { id: SESSION, userId: 'test-user' }); } catch { /* exists */ }
+  try {
+    createThread(getDb(), { id: SESSION, userId: 'test-user' });
+  } catch {
+    /* exists */
+  }
   clearCheckoutSessionId(SESSION);
   clearCartSessionId(SESSION);
   mockCheckoutGet.mockClear();
@@ -99,7 +104,10 @@ describe('withCheckoutTracking', () => {
 
     it('clears session after completion', async () => {
       setCheckoutSessionId(SESSION, 'checkout-123');
-      const tool = makeTool('complete_checkout', vi.fn(async () => ({ status: 'completed' })));
+      const tool = makeTool(
+        'complete_checkout',
+        vi.fn(async () => ({ status: 'completed' })),
+      );
       const tracked = withCheckoutTracking(tool, SESSION);
 
       await tracked.execute({ payment: {} });
@@ -123,16 +131,17 @@ describe('withCheckoutTracking', () => {
 
       await tracked.execute({ id: 'explicit-id', payment: {} });
 
-      expect(executeFn).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'explicit-id' }),
-      );
+      expect(executeFn).toHaveBeenCalledWith(expect.objectContaining({ id: 'explicit-id' }));
     });
   });
 
   describe('cancel_checkout', () => {
     it('clears session after cancellation', async () => {
       setCheckoutSessionId(SESSION, 'checkout-123');
-      const tool = makeTool('cancel_checkout', vi.fn(async () => ({ status: 'cancelled' })));
+      const tool = makeTool(
+        'cancel_checkout',
+        vi.fn(async () => ({ status: 'cancelled' })),
+      );
       const tracked = withCheckoutTracking(tool, SESSION);
 
       await tracked.execute({});
@@ -218,14 +227,15 @@ describe('withCartTracking', () => {
 
       await tracked.execute({});
 
-      expect(executeFn).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'cart-123' }),
-      );
+      expect(executeFn).toHaveBeenCalledWith(expect.objectContaining({ id: 'cart-123' }));
     });
 
     it('clears cart session after cancellation', async () => {
       setCartSessionId(SESSION, 'cart-123');
-      const tool = makeTool('cancel_cart', vi.fn(async () => ({})));
+      const tool = makeTool(
+        'cancel_cart',
+        vi.fn(async () => ({})),
+      );
       const tracked = withCartTracking(tool, SESSION);
 
       await tracked.execute({});

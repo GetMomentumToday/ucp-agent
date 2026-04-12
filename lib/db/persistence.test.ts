@@ -54,22 +54,16 @@ describe('persistence round-trip', () => {
   });
 
   it('reloads messages after simulated page refresh (new db reference)', () => {
-    appendMessage(
-      (createThread(db, { id: 't-1', userId: USER_A }), db),
-      't-1',
-      {
-        id: 'msg-1',
-        parentId: null,
-        format: 'ai-sdk/v6',
-        content: { role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
-      },
-    );
+    appendMessage((createThread(db, { id: 't-1', userId: USER_A }), db), 't-1', {
+      id: 'msg-1',
+      parentId: null,
+      format: 'ai-sdk/v6',
+      content: { role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+    });
 
     const reloaded = loadMessages(db, 't-1');
     expect(reloaded).toHaveLength(1);
-    expect(
-      (reloaded[0]!.content as { parts: { text: string }[] }).parts[0]!.text,
-    ).toBe('Hello');
+    expect((reloaded[0]!.content as { parts: { text: string }[] }).parts[0]!.text).toBe('Hello');
   });
 
   describe('multi-user isolation', () => {

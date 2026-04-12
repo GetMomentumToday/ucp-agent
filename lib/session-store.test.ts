@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('./db/connection', async () => {
-  const { createTestDb } = await vi.importActual<typeof import('./db/connection')>('./db/connection');
+  const { createTestDb } =
+    await vi.importActual<typeof import('./db/connection')>('./db/connection');
   const db = createTestDb();
   return { getDb: () => db, createTestDb };
 });

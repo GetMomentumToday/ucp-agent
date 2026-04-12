@@ -37,10 +37,7 @@ export async function POST(req: Request, ctx: RouteContext): Promise<Response> {
     };
 
     if (!body.id || !body.format || body.content === undefined) {
-      return Response.json(
-        { error: 'id, format, and content are required' },
-        { status: 400 },
-      );
+      return Response.json({ error: 'id, format, and content are required' }, { status: 400 });
     }
 
     const db = getDb();

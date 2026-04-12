@@ -114,11 +114,7 @@ function createHistoryAdapter(aui: ReturnType<typeof useAui>): ThreadHistoryAdap
   };
 }
 
-export function ServerThreadHistoryProvider({
-  children,
-}: {
-  readonly children: ReactNode;
-}) {
+export function ServerThreadHistoryProvider({ children }: { readonly children: ReactNode }) {
   const aui = useAui();
   const history = useMemo(() => createHistoryAdapter(aui), [aui]);
   const adapters = useMemo(() => ({ history }), [history]);

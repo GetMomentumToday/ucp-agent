@@ -1,8 +1,5 @@
 import { getDb } from './db/connection';
-import {
-  getSession,
-  upsertSession,
-} from './db/session-repository';
+import { getSession, upsertSession } from './db/session-repository';
 
 export function getCheckoutSessionId(sessionId: string): string | undefined {
   const db = getDb();

@@ -9,10 +9,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['lib/**/*.ts', 'app/api/**/*.ts'],
-      exclude: [
-        '**/*.test.ts',
-        '**/*.d.ts',
-      ],
+      exclude: ['**/*.test.ts', '**/*.d.ts'],
       thresholds: {
         statements: 80,
         branches: 70,
