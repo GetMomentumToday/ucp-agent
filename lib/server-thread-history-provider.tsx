@@ -13,6 +13,49 @@ import type {
   MessageFormatRepository,
   MessageStorageEntry,
 } from '@assistant-ui/core';
+import { getPrefetchedMessages } from './remote-thread-list-adapter';
+
+type RawEntry = { id: string; parent_id: string | null; format: string; content: unknown };
+
+function sortByParentChain(entries: readonly RawEntry[]): readonly RawEntry[] {
+  if (entries.length <= 1) return entries;
+
+  const byParent = new Map<string | null, RawEntry>();
+  for (const entry of entries) {
+    byParent.set(entry.parent_id, entry);
+  }
+
+  const sorted: RawEntry[] = [];
+  let current = byParent.get(null);
+  const visited = new Set<string>();
+
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    sorted.push(current);
+    current = byParent.get(current.id);
+  }
+
+  if (sorted.length < entries.length) {
+    for (const entry of entries) {
+      if (!visited.has(entry.id)) sorted.push(entry);
+    }
+  }
+
+  return sorted;
+}
+
+function decodeMessages<TMessage, TStorageFormat extends Record<string, unknown>>(
+  entries: readonly RawEntry[],
+  formatAdapter: MessageFormatAdapter<TMessage, TStorageFormat>,
+): MessageFormatRepository<TMessage> {
+  const sorted = sortByParentChain(entries);
+  const decoded = sorted.map((entry) =>
+    formatAdapter.decode(entry as MessageStorageEntry<TStorageFormat>),
+  );
+  const headId =
+    decoded.length > 0 ? formatAdapter.getId(decoded[decoded.length - 1]!.message) : undefined;
+  return { messages: decoded, headId };
+}
 
 function createFormattedAdapter<TMessage, TStorageFormat extends Record<string, unknown>>(
   aui: ReturnType<typeof useAui>,
@@ -23,18 +66,16 @@ function createFormattedAdapter<TMessage, TStorageFormat extends Record<string, 
       const remoteId = aui.threadListItem().getState().remoteId;
       if (!remoteId) return { messages: [] };
 
+      const cached = getPrefetchedMessages(remoteId);
+      if (cached) return decodeMessages(cached, formatAdapter);
+
       const res = await fetch(`/api/threads/${remoteId}/messages`);
       if (!res.ok) return { messages: [] };
 
       const data = (await res.json()) as {
         messages: MessageStorageEntry<TStorageFormat>[];
       };
-
-      const decoded = data.messages.map((entry) => formatAdapter.decode(entry));
-      const headId =
-        decoded.length > 0 ? formatAdapter.getId(decoded[decoded.length - 1]!.message) : undefined;
-
-      return { messages: decoded, headId };
+      return decodeMessages(data.messages, formatAdapter);
     },
 
     async append(item: MessageFormatItem<TMessage>): Promise<void> {
